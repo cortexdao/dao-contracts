@@ -1,0 +1,72 @@
+{
+  "name": "@cortexdao/dao-contracts",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": ["ethereum", "solidity", "defi"],
+  "files": ["contracts", "artifacts"],
+  "scripts": {
+    "check": "yarn lint",
+    "clean": "hardhat clean",
+    "compile": "hardhat compile",
+    "test": "hardhat test tests/*",
+    "lint": "solhint contracts/**/*.sol contracts/*.sol",
+    "coverage": "yarn clean; hardhat coverage --testfiles \"tests/**/*.js\"",
+    "dot-only": "yarn dot-only-hunter tests",
+    "fork_mainnet": "ENABLE_FORKING=true yarn hardhat node --hostname 0.0.0.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "./git_hooks/commit-msg"
+    }
+  },
+  "lint-staged": {
+    "contracts/**/*.sol": "solhint -w 0",
+    "*.js": "eslint --cache --fix",
+    "*.{js,sol,css,md}": "prettier --write"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cortexdao/dao-contracts.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "author": "Cortex DAO",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cortexdao/dao-contracts/issues"
+  },
+  "homepage": "https://github.com/cortexdao/dao-contracts/README.md",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.1",
+    "@nomiclabs/hardhat-vyper": "^2.0.1",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
+    "dot-only-hunter": "1.0.3",
+    "dotenv": "^8.2.0",
+    "eslint": "^7.11.0",
+    "eslint-config-prettier": "^6.14.0",
+    "ethereum-waffle": "~3.4.0",
+    "ethers": "~5.4.7",
+    "ganache-time-traveler": "^1.0.15",
+    "hardhat": "2.6.6",
+    "hardhat-contract-sizer": "^2.1.1",
+    "husky": "4.0.10",
+    "lint-staged": "^10.2.11",
+    "prettier": "2.3.0",
+    "prettier-plugin-solidity": "1.0.0-beta.11",
+    "solhint": "^3.2.0",
+    "solidity-coverage": "^0.7.10"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "0.0.9",
+    "@openzeppelin/contracts": "3.4.0",
+    "@openzeppelin/contracts-ethereum-package": "3.0.0",
+    "chalk": "^4.1.0",
+    "commander": "^6.2.0",
+    "lodash": "^4.17.21",
+    "yargs": "^16.1.1"
+  }
+}
