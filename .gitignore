@@ -1,0 +1,32 @@
+# NPM packages
+node_modules/
+
+# Hardhat files
+cache/
+artifacts/*
+
+# Solidity coverage files
+coverage.json
+coverage/
+.coverage_artifacts/
+.coverage_cache/
+.coverage_contracts/
+
+# env files
+.env
+
+# npm
+.npmrc
+
+# yarn
+.yarnrc
+yarn-debug.log*
+yarn-error.log*
+
+# lint
+.eslintcache
+
+# vim
+*.swp
+*.swo
+

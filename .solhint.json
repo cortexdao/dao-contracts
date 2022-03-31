@@ -1,0 +1,20 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "reason-string": [
+      "warn"
+    ],
+    "constructor-syntax": "warn",
+    "func-param-name-mixedcase": "warn",
+    "modifier-name-mixedcase": "warn",
+    "private-vars-leading-underscore": "off",
+    "ordering": "warn",
+    "compiler-version": [
+      "error",
+      "^0.6.6"
+    ],
+    "var-name-mixedcase": "off",
+    "mark-callable-contracts": "off",
+    "no-inline-assembly": "off"
+  }
+}
