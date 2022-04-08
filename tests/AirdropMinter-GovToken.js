@@ -126,8 +126,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       "TransparentUpgradeableProxy"
     );
     const initData = await logic.interface.encodeFunctionData(
-      "initialize()",
-      []
+      "initialize(uint256)",
+      [tokenAmountToBigNumber("271828182")]
     );
     const proxy = await TransparentUpgradeableProxy.deploy(
       logic.address,

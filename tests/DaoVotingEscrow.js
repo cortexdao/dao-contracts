@@ -105,7 +105,7 @@ describe("DaoVotingEscrow unit tests", () => {
   before("Deploy DAO token and mint tokens for user", async () => {
     const DaoToken = await ethers.getContractFactory("TestDaoToken");
     cxd = await DaoToken.deploy();
-    await cxd.initialize();
+    await cxd.initialize(tokenAmountToBigNumber("271828182"));
 
     await cxd.testMint(user.address, tokenAmountToBigNumber("100"));
     expect(await cxd.balanceOf(user.address)).to.equal(
