@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BUSDL-1.1
-pragma solidity 0.6.11;
+pragma solidity 0.8.9;
 
 import {
     Initializable as OZInitializable
-} from "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract Initializable is OZInitializable {
     /**

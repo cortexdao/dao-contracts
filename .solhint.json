@@ -1,20 +1,16 @@
 {
   "extends": "solhint:recommended",
   "rules": {
-    "reason-string": [
-      "warn"
-    ],
+    "reason-string": ["warn"],
     "constructor-syntax": "warn",
     "func-param-name-mixedcase": "warn",
     "modifier-name-mixedcase": "warn",
     "private-vars-leading-underscore": "off",
     "ordering": "warn",
-    "compiler-version": [
-      "error",
-      "^0.6.6"
-    ],
+    "compiler-version": ["error", "^0.8.9"],
     "var-name-mixedcase": "off",
     "mark-callable-contracts": "off",
-    "no-inline-assembly": "off"
+    "no-inline-assembly": "off",
+    "func-visibility": ["warn", { "ignoreConstructors": true }]
   }
 }
