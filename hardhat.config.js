@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-require("solidity-coverage");
+// require("solidity-coverage");
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-web3");
