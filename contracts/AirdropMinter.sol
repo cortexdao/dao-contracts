@@ -22,7 +22,7 @@ contract AirdropMinter {
     uint256 internal constant _CONVERSION_DENOMINATOR = 1e8;
     uint256 internal constant _CONVERSION_BONUS = 100; // 1 basis point
 
-    constructor(address daoTokenAddress, address veTokenAddress) public {
+    constructor(address daoTokenAddress, address veTokenAddress) {
         require(daoTokenAddress != address(0), "INVALID_DAO_ADDRESS");
         require(veTokenAddress != address(0), "INVALID_ESCROW_ADDRESS");
         DAO_TOKEN_ADDRESS = daoTokenAddress;
@@ -38,7 +38,7 @@ contract AirdropMinter {
         if (locked.amount <= 0) {
             revert("NO_BOOST_LOCKED_AMOUNT");
         }
-        uint256 blApyLockedAmount = uint256(locked.amount);
+        uint256 blApyLockedAmount = uint128(locked.amount);
         uint256 blApyLockEnd = locked.end;
 
         require(
@@ -46,8 +46,8 @@ contract AirdropMinter {
             "BOOST_LOCK_ENDS_TOO_EARLY"
         );
         uint256 mintAmount = _convertAmount(blApyLockedAmount);
-        uint256 bonusAmount = mintAmount.div(_CONVERSION_BONUS);
-        mintAmount = mintAmount.add(bonusAmount);
+        uint256 bonusAmount = mintAmount / _CONVERSION_BONUS;
+        mintAmount = mintAmount + bonusAmount;
         DaoToken(DAO_TOKEN_ADDRESS).mint(msg.sender, mintAmount);
         IVotingEscrow(VE_TOKEN_ADDRESS).create_lock_for(
             msg.sender,
@@ -100,7 +100,6 @@ contract AirdropMinter {
 
     /** @dev convert APY token amount to CXD token amount */
     function _convertAmount(uint256 apyAmount) internal pure returns (uint256) {
-        return
-            apyAmount.mul(_CONVERSION_NUMERATOR).div(_CONVERSION_DENOMINATOR);
+        return (apyAmount * _CONVERSION_NUMERATOR) / _CONVERSION_DENOMINATOR;
     }
 }
