@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BUSDL-1.1
 pragma solidity 0.8.9;
-pragma experimental ABIEncoderV2;
 
 import {DaoToken} from "contracts/DaoToken.sol";
 

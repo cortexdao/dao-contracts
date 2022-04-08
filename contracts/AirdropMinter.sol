@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: BUSDL-1.1
 pragma solidity 0.8.9;
-pragma experimental ABIEncoderV2;
 
 import {IApyGovernanceToken} from "contracts/IApyGovernanceToken.sol";
 import {IVotingEscrow} from "contracts/IVotingEscrow.sol";
 import {IRewardDistributor} from "contracts/IRewardDistributor.sol";
-import {DaoToken} from "./DaoToken.sol";
+import {DaoToken} from "contracts/DaoToken.sol";
 
 contract AirdropMinter {
     address public constant APY_TOKEN_ADDRESS =
