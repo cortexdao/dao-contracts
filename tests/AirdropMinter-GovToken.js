@@ -9,6 +9,7 @@ const {
 } = require("./utils");
 
 const SECONDS_IN_DAY = 86400;
+const SECONDS_IN_WEEK = SECONDS_IN_DAY * 7;
 const pinnedBlock = 14541023;
 const forkingUrl = hre.config.networks.hardhat.forking.url;
 
@@ -309,7 +310,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
     before("Set lock end", async () => {
       const timestamp = (await ethers.provider.getBlock()).timestamp;
-      const lockEnd = timestamp + SECONDS_IN_DAY * 7; // lock ends in 1 week
+      const lockEnd = timestamp + SECONDS_IN_DAY * 14; // lock ends in 2 weeks
       await govToken.connect(deployer).setLockEnd(lockEnd);
     });
 
@@ -365,11 +366,16 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     });
 
     it("Unsuccessfully mint boost-locked DAO tokens if locked blApy ends too early", async () => {
-      // create a lock longer than the lockEnd
+      // get ve epoch time in the future so we can create a blAPY lock
       const currentTime = (await ethers.provider.getBlock()).timestamp;
-      const unlockTime = ethers.BigNumber.from(
-        currentTime + SECONDS_IN_DAY * 6
-      ); // lock ends in 6 days
+      let unlockTime = ethers.BigNumber.from(currentTime + SECONDS_IN_DAY * 7);
+      unlockTime = unlockTime.div(SECONDS_IN_WEEK).mul(SECONDS_IN_WEEK); // normalize to ve epochs
+      expect(unlockTime).to.be.gt(currentTime); // should pass unless test is run exactly at an epoch
+
+      const lockEnd = await govToken.lockEnd();
+      expect(unlockTime).to.be.lt(lockEnd);
+
+      // create a blAPY lock shorter than the lockEnd
       await blApy.connect(user).create_lock(userAPYBal, unlockTime);
 
       await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
