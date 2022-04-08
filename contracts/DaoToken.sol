@@ -26,11 +26,20 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
     // solhint-disable-next-line no-empty-blocks
     function initializeV2() external virtual onlyProxyAdmin {}
 
-    // solhint-disable-next-line no-empty-blocks
+    // FIXME: protect with minter permission
+    /**
+     * @notice Mint tokens to specified account.  Cannot exceed the supply cap.
+     * @dev Can only be used by account set as `minter`.  This should be the
+     * smart contract that disburses the liquidity mining rewards.
+     */
     function mint(address account, uint256 amount) external {
         _mint(account, amount);
     }
 
+    /**
+     * @notice Set the new supply cap as determined by governance.
+     * @dev New cap cannot be less than existing supply.
+     */
     function setSupplyCap(uint256 newCap) external onlyOwner {
         _setSupplyCap(newCap);
     }
