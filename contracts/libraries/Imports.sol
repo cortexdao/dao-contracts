@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSDL-1.1
-pragma solidity 0.6.11;
+pragma solidity 0.8.9;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";

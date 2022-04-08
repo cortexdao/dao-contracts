@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSDL-1.1
-pragma solidity 0.6.11;
+pragma solidity 0.8.9;
 pragma experimental ABIEncoderV2;
 
 /* solhint-disable func-name-mixedcase, func-param-name-mixedcase */
