@@ -13,14 +13,14 @@ import {
 contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
     uint256 private _supplyCap;
 
-    function initialize(uint256 supplyCap) external initializer {
+    function initialize() external initializer {
         // initialize ancestor storage
         __Context_init_unchained();
         __Ownable_init_unchained();
         __ERC20_init_unchained("Cortex DAO Token", "CXD");
 
         // initialize impl-specific storage
-        _setSupplyCap(supplyCap);
+        _setSupplyCap(271828182e18);
     }
 
     // solhint-disable-next-line no-empty-blocks

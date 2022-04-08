@@ -30,13 +30,10 @@ describe("DaoToken deployment", () => {
     const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
     const proxyAdmin = await ProxyAdmin.deploy();
 
-    const supplyCap = tokenAmountToBigNumber("271828182");
     const TransparentUpgradeableProxy = await ethers.getContractFactory(
       "TransparentUpgradeableProxy"
     );
-    const initData = logic.interface.encodeFunctionData("initialize(uint256)", [
-      supplyCap,
-    ]);
+    const initData = logic.interface.encodeFunctionData("initialize()", []);
     daoToken = await expect(
       TransparentUpgradeableProxy.deploy(
         logic.address,
@@ -80,13 +77,10 @@ describe("DaoToken unit tests", () => {
     const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
     const proxyAdmin = await ProxyAdmin.deploy();
 
-    const supplyCap = tokenAmountToBigNumber("271828182");
     const TransparentUpgradeableProxy = await ethers.getContractFactory(
       "TransparentUpgradeableProxy"
     );
-    const initData = logic.interface.encodeFunctionData("initialize(uint256)", [
-      supplyCap,
-    ]);
+    const initData = logic.interface.encodeFunctionData("initialize()", []);
     const proxy = await TransparentUpgradeableProxy.deploy(
       logic.address,
       proxyAdmin.address,
@@ -110,6 +104,11 @@ describe("DaoToken unit tests", () => {
 
     it("Deployer is owner", async () => {
       expect(await daoToken.owner()).to.equal(deployer.address);
+    });
+
+    it("Initial supply cap is 271,828,182", async () => {
+      const expectedSupplyCap = tokenAmountToBigNumber("271828182");
+      expect(await daoToken.supplyCap()).to.equal(expectedSupplyCap);
     });
   });
 });
