@@ -11,13 +11,16 @@ import {
 } from "contracts/proxy/Imports.sol";
 
 contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
-    function initialize() external initializer {
+    uint256 private _supplyCap;
+
+    function initialize(uint256 supplyCap) external initializer {
         // initialize ancestor storage
         __Context_init_unchained();
         __Ownable_init_unchained();
         __ERC20_init_unchained("Cortex DAO Token", "CXD");
 
         // initialize impl-specific storage
+        _setSupplyCap(supplyCap);
     }
 
     // solhint-disable-next-line no-empty-blocks
@@ -26,5 +29,30 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
     // solhint-disable-next-line no-empty-blocks
     function mint(address account, uint256 amount) external {
         _mint(account, amount);
+    }
+
+    function setSupplyCap(uint256 newCap) external onlyOwner {
+        _setSupplyCap(newCap);
+    }
+
+    /**
+     * @dev Returns the cap on the token's total supply.
+     */
+    function supplyCap() public view virtual returns (uint256) {
+        return _supplyCap;
+    }
+
+    function _mint(address account, uint256 amount) internal virtual override {
+        require(
+            ERC20Upgradeable.totalSupply() + amount <= supplyCap(),
+            "SUPPLY_CAP_EXCEEDED"
+        );
+        ERC20Upgradeable._mint(account, amount);
+    }
+
+    function _setSupplyCap(uint256 newCap) internal {
+        require(newCap > 0, "ZERO_SUPPLY_CAP");
+        require(newCap > ERC20Upgradeable.totalSupply(), "INVALID_SUPPLY_CAP");
+        _supplyCap = newCap;
     }
 }
