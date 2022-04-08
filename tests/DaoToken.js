@@ -48,8 +48,7 @@ describe("DaoToken deployment", () => {
 describe("DaoToken unit tests", () => {
   // signers
   let deployer;
-  let user;
-  let anotherUser;
+  let randomUser;
 
   // deployed contracts
   let daoToken;
@@ -67,7 +66,7 @@ describe("DaoToken unit tests", () => {
   });
 
   before("Get signers", async () => {
-    [deployer, user, anotherUser] = await ethers.getSigners();
+    [deployer, randomUser] = await ethers.getSigners();
   });
 
   before("Deploy DAO token", async () => {
@@ -89,7 +88,7 @@ describe("DaoToken unit tests", () => {
     daoToken = logic.attach(proxy.address);
   });
 
-  describe("Defaults", () => {
+  describe("initialize", () => {
     it("Symbol", async () => {
       expect(await daoToken.symbol()).to.equal("CXD");
     });
@@ -109,6 +108,38 @@ describe("DaoToken unit tests", () => {
     it("Initial supply cap is 271,828,182", async () => {
       const expectedSupplyCap = tokenAmountToBigNumber("271828182");
       expect(await daoToken.supplyCap()).to.equal(expectedSupplyCap);
+    });
+  });
+
+  describe("mint", () => {
+    it("Permissioned can mint", async () => {
+      expect.fail();
+    });
+
+    it("Unpermissioned cannot mint", async () => {
+      expect.fail();
+    });
+
+    it("Cannot mint beyond supply cap", async () => {
+      expect.fail();
+    });
+  });
+
+  describe("setSupplyCap", () => {
+    it("Permissioned can set", async () => {
+      expect.fail();
+    });
+
+    it("Unpermissioned cannot set", async () => {
+      expect.fail();
+    });
+
+    it("Cannot set zero cap", async () => {
+      expect.fail();
+    });
+
+    it("Cannot set cap lower than total supply", async () => {
+      expect.fail();
     });
   });
 });
