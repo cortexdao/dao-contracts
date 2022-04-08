@@ -3,33 +3,24 @@ pragma solidity 0.8.9;
 
 import {Initializable} from "./Initializable.sol";
 import {
-    OwnableUpgradeSafe
-} from "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
+    AddressUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import {
-    ERC20UpgradeSafe
-} from "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
+    ERC20Upgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {
-    ReentrancyGuardUpgradeSafe
-} from "@openzeppelin/contracts-ethereum-package/contracts/utils/ReentrancyGuard.sol";
+    OwnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {
-    PausableUpgradeSafe
-} from "@openzeppelin/contracts-ethereum-package/contracts/utils/Pausable.sol";
+    ReentrancyGuardUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/ProxyAdmin.sol";
+import {
+    ProxyAdmin
+} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {
     TransparentUpgradeableProxy
-} from "@openzeppelin/contracts/proxy/TransparentUpgradeableProxy.sol";
-
-/* Aliases don't persist so we can't rename them here, but you should
- * rename them at point of import with the "UpgradeSafe" prefix, e.g.
- * import {Address as AddressUpgradeSafe} etc.
- */
-import {
-    Address
-} from "@openzeppelin/contracts-ethereum-package/contracts/utils/Address.sol";
-import {
-    SafeMath
-} from "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
-import {
-    SignedSafeMath
-} from "@openzeppelin/contracts-ethereum-package/contracts/math/SignedSafeMath.sol";
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";

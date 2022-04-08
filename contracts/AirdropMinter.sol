@@ -2,16 +2,12 @@
 pragma solidity 0.8.9;
 pragma experimental ABIEncoderV2;
 
-import {SafeMath} from "contracts/libraries/Imports.sol";
-
 import {IApyGovernanceToken} from "contracts/IApyGovernanceToken.sol";
 import {IVotingEscrow} from "contracts/IVotingEscrow.sol";
 import {IRewardDistributor} from "contracts/IRewardDistributor.sol";
 import {DaoToken} from "./DaoToken.sol";
 
 contract AirdropMinter {
-    using SafeMath for uint256;
-
     address public constant APY_TOKEN_ADDRESS =
         0x95a4492F028aa1fd432Ea71146b433E7B4446611;
     address public constant BLAPY_TOKEN_ADDRESS =
