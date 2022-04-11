@@ -121,7 +121,18 @@ describe("DaoToken unit tests", () => {
     });
 
     it("Cannot mint beyond supply cap", async () => {
-      expect.fail();
+      const supplyCap = await daoToken.supplyCap();
+      const mintAmount = supplyCap.add(1);
+      await expect(
+        daoToken.mint(randomUser.address, mintAmount)
+      ).to.be.revertedWith("SUPPLY_CAP_EXCEEDED");
+
+      const halfSupplyCap = supplyCap.div(2);
+      await daoToken.mint(randomUser.address, halfSupplyCap);
+
+      await expect(
+        daoToken.mint(randomUser.address, halfSupplyCap.add(2))
+      ).to.be.revertedWith("SUPPLY_CAP_EXCEEDED");
     });
   });
 
@@ -135,11 +146,18 @@ describe("DaoToken unit tests", () => {
     });
 
     it("Cannot set zero cap", async () => {
-      expect.fail();
+      await expect(daoToken.setSupplyCap(0)).to.be.revertedWith(
+        "ZERO_SUPPLY_CAP"
+      );
     });
 
     it("Cannot set cap lower than total supply", async () => {
-      expect.fail();
+      await daoToken.mint(randomUser.address, tokenAmountToBigNumber("100")); // ensure we have some supply
+      const totalSupply = await daoToken.totalSupply();
+      const newSupply = totalSupply.sub(1);
+      await expect(daoToken.setSupplyCap(newSupply)).to.be.revertedWith(
+        "INVALID_SUPPLY_CAP"
+      );
     });
   });
 });
