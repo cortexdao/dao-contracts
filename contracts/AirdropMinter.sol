@@ -28,7 +28,7 @@ contract AirdropMinter {
         VE_TOKEN_ADDRESS = veTokenAddress;
     }
 
-    function mintLocked() external {
+    function mintLocked() external returns (uint256) {
         require(isAirdropActive(), "AIRDROP_INACTIVE");
 
         IVotingEscrow blApy = IVotingEscrow(BLAPY_TOKEN_ADDRESS);
@@ -53,6 +53,8 @@ contract AirdropMinter {
             mintAmount,
             blApyLockEnd
         );
+
+        return mintAmount;
     }
 
     function claimApyAndMint(
@@ -60,10 +62,10 @@ contract AirdropMinter {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external {
+    ) external returns (uint256) {
         require(isAirdropActive(), "AIRDROP_INACTIVE");
         claimApy(recipient, v, r, s);
-        mint();
+        return mint();
     }
 
     function claimApy(
@@ -80,7 +82,7 @@ contract AirdropMinter {
         );
     }
 
-    function mint() public {
+    function mint() public returns (uint256) {
         require(isAirdropActive(), "AIRDROP_INACTIVE");
 
         IApyGovernanceToken apy = IApyGovernanceToken(APY_TOKEN_ADDRESS);
@@ -89,6 +91,8 @@ contract AirdropMinter {
         apy.lockAmount(msg.sender, unlockedApyBalance);
         uint256 mintAmount = _convertAmount(unlockedApyBalance);
         DaoToken(DAO_TOKEN_ADDRESS).mint(msg.sender, mintAmount);
+
+        return mintAmount;
     }
 
     function isAirdropActive() public view returns (bool) {
