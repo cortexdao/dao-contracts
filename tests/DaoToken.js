@@ -49,6 +49,7 @@ describe("DaoToken deployment", () => {
 describe("DaoToken unit tests", () => {
   // signers
   let deployer;
+  let minter;
   let randomUser;
 
   // deployed contracts
@@ -67,7 +68,7 @@ describe("DaoToken unit tests", () => {
   });
 
   before("Get signers", async () => {
-    [deployer, randomUser] = await ethers.getSigners();
+    [deployer, minter, randomUser] = await ethers.getSigners();
   });
 
   before("Deploy DAO token", async () => {
@@ -134,26 +135,33 @@ describe("DaoToken unit tests", () => {
   });
 
   describe("mint", () => {
+    before("Set minter", async () => {
+      await daoToken.connect(deployer).setMinter(minter.address);
+    });
+
     it("Permissioned can mint", async () => {
-      expect.fail();
+      await expect(daoToken.connect(minter).mint(randomUser.address, 1)).to.not
+        .be.reverted;
     });
 
     it("Unpermissioned cannot mint", async () => {
-      expect.fail();
+      await expect(
+        daoToken.connect(randomUser).mint(randomUser.address, 1)
+      ).to.be.revertedWith("MINTER_ONLY");
     });
 
     it("Cannot mint beyond supply cap", async () => {
       const supplyCap = await daoToken.supplyCap();
       const mintAmount = supplyCap.add(1);
       await expect(
-        daoToken.mint(randomUser.address, mintAmount)
+        daoToken.connect(minter).mint(randomUser.address, mintAmount)
       ).to.be.revertedWith("SUPPLY_CAP_EXCEEDED");
 
       const halfSupplyCap = supplyCap.div(2);
-      await daoToken.mint(randomUser.address, halfSupplyCap);
+      await daoToken.connect(minter).mint(randomUser.address, halfSupplyCap);
 
       await expect(
-        daoToken.mint(randomUser.address, halfSupplyCap.add(2))
+        daoToken.connect(minter).mint(randomUser.address, halfSupplyCap.add(2))
       ).to.be.revertedWith("SUPPLY_CAP_EXCEEDED");
     });
   });
@@ -178,7 +186,12 @@ describe("DaoToken unit tests", () => {
     });
 
     it("Cannot set cap lower than total supply", async () => {
-      await daoToken.mint(randomUser.address, tokenAmountToBigNumber("100")); // ensure we have some supply
+      // ensure we have some supply
+      await daoToken.connect(deployer).setMinter(minter.address);
+      await daoToken
+        .connect(minter)
+        .mint(randomUser.address, tokenAmountToBigNumber("100"));
+
       const totalSupply = await daoToken.totalSupply();
       const newSupply = totalSupply.sub(1);
       await expect(daoToken.setSupplyCap(newSupply)).to.be.revertedWith(
