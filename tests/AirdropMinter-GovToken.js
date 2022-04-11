@@ -10,6 +10,9 @@ const {
 
 const SECONDS_IN_DAY = 86400;
 const SECONDS_IN_WEEK = SECONDS_IN_DAY * 7;
+const BONUS_NUMERATOR = 100;
+const BONUS_DENOMINATOR = 10000;
+
 const pinnedBlock = 14541023;
 const forkingUrl = hre.config.networks.hardhat.forking.url;
 
@@ -336,6 +339,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     });
 
     it("Successfully mint boost-locked DAO tokens", async () => {
+      expect(await daoToken.balanceOf(user.address)).to.equal(0);
+
       // create a lock longer than the lockEnd
       const currentTime = (await ethers.provider.getBlock()).timestamp;
       const unlockTime = ethers.BigNumber.from(
@@ -346,24 +351,27 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       // user first approves daoVotingEscrow to transfer DAO tokens after mint
       const [apyAmount] = await blApy.locked(user.address);
       const expectedCdxAmount = convertToCdxAmount(apyAmount);
-      const bonusExpectedCdxAmount = expectedCdxAmount.add(
-        expectedCdxAmount.div(100)
-      );
-      console.log("exp", bonusExpectedCdxAmount.toString());
       await daoToken
         .connect(user)
-        .approve(daoVotingEscrow.address, bonusExpectedCdxAmount);
+        .approve(daoVotingEscrow.address, expectedCdxAmount);
 
       // mint the boost locked DAO tokens
       expect((await daoVotingEscrow.locked(user.address))[0]).to.equal(0);
       await minter.connect(user).mintLocked();
+
       // check locked CDX amount is properly converted from APY amount
       const [cdxAmount] = await daoVotingEscrow.locked(user.address);
-      expect(cdxAmount).to.equal(bonusExpectedCdxAmount);
+      expect(cdxAmount).to.equal(expectedCdxAmount);
       // check CDX lock end is the same as APY lock end
       const [, apyLockEnd] = await blApy.locked(user.address);
       const [, cdxLockEnd] = await daoVotingEscrow.locked(user.address);
       expect(apyLockEnd).to.equal(cdxLockEnd);
+      // check user has gained the CXD bonus
+      const blApyBalance = await blApy.balanceOf(user.address);
+      const expectedCdxBonus = blApyBalance
+        .mul(BONUS_NUMERATOR)
+        .div(BONUS_DENOMINATOR);
+      expect(await daoToken.balanceOf(user.address)).to.equal(expectedCdxBonus);
     });
 
     it("Unsuccessfully mint boost-locked DAO tokens if no locked blApy", async () => {
