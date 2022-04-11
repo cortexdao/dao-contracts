@@ -19,13 +19,19 @@ contract AirdropMinter {
 
     uint256 internal constant _CONVERSION_NUMERATOR = 271828182;
     uint256 internal constant _CONVERSION_DENOMINATOR = 1e8;
-    uint256 internal constant _CONVERSION_BONUS = 100; // 1 basis point
+    uint256 internal immutable _BONUS_NUMERATOR; // in bps
+    uint256 internal constant _BONUS_DENOMINATOR = 1e4; // 100% in bps
 
-    constructor(address daoTokenAddress, address veTokenAddress) {
+    constructor(
+        address daoTokenAddress,
+        address veTokenAddress,
+        uint256 bonusInBps
+    ) {
         require(daoTokenAddress != address(0), "INVALID_DAO_ADDRESS");
         require(veTokenAddress != address(0), "INVALID_ESCROW_ADDRESS");
         DAO_TOKEN_ADDRESS = daoTokenAddress;
         VE_TOKEN_ADDRESS = veTokenAddress;
+        _BONUS_NUMERATOR = bonusInBps;
     }
 
     function mintLocked() external returns (uint256) {
@@ -44,13 +50,22 @@ contract AirdropMinter {
             IApyGovernanceToken(APY_TOKEN_ADDRESS).lockEnd() <= blApyLockEnd,
             "BOOST_LOCK_ENDS_TOO_EARLY"
         );
-        uint256 mintAmount = _convertAmount(blApyLockedAmount);
-        uint256 bonusAmount = mintAmount / _CONVERSION_BONUS;
-        mintAmount = mintAmount + bonusAmount;
+
+        // bonus takes into account user's time commitment
+        uint256 blApyBalance = blApy.balanceOf(msg.sender);
+        uint256 bonusAmount =
+            (blApyBalance * _BONUS_NUMERATOR) / _BONUS_DENOMINATOR;
+
+        uint256 cxdLockedAmount = _convertAmount(blApyLockedAmount);
+        uint256 mintAmount = cxdLockedAmount + bonusAmount;
+
+        // mint the full amount to user;
         DaoToken(DAO_TOKEN_ADDRESS).mint(msg.sender, mintAmount);
+        // only lock up the non-bonus in the voting escrow, so
+        // the user keeps the bonus unlocked.
         IVotingEscrow(VE_TOKEN_ADDRESS).create_lock_for(
             msg.sender,
-            mintAmount,
+            cxdLockedAmount,
             blApyLockEnd
         );
 
