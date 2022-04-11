@@ -16,6 +16,9 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
     /** @notice The cap on the token's total supply. */
     uint256 public supplyCap;
 
+    event NewMinter(address newMinter);
+    event NewSupplyCap(uint256 newCap);
+
     modifier onlyMinter() {
         require(msg.sender == minter, "MINTER_ONLY");
         _;
@@ -34,7 +37,6 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
     // solhint-disable-next-line no-empty-blocks
     function initializeV2() external virtual onlyProxyAdmin {}
 
-    // FIXME: protect with minter permission
     /**
      * @notice Mint tokens to specified account.  Cannot exceed the supply cap.
      * @dev Can only be used by account set as `minter`.  This should be the
@@ -44,9 +46,11 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
         _mint(account, amount);
     }
 
+    /**
+     * @notice Set the address allowed to mint token.
+     */
     function setMinter(address newMinter) external onlyOwner {
-        require(newMinter != address(0), "INVALID_ADDRESS");
-        minter = newMinter;
+        _setMinter(newMinter);
     }
 
     /**
@@ -65,9 +69,16 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
         ERC20Upgradeable._mint(account, amount);
     }
 
+    function _setMinter(address newMinter) internal {
+        require(newMinter != address(0), "INVALID_ADDRESS");
+        minter = newMinter;
+        emit NewMinter(newMinter);
+    }
+
     function _setSupplyCap(uint256 newCap) internal {
         require(newCap > 0, "ZERO_SUPPLY_CAP");
         require(newCap > ERC20Upgradeable.totalSupply(), "INVALID_SUPPLY_CAP");
         supplyCap = newCap;
+        emit NewSupplyCap(newCap);
     }
 }
