@@ -11,8 +11,15 @@ import {
 } from "contracts/proxy/Imports.sol";
 
 contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
+    /** @notice Account allowed to mint tokens. */
+    address public minter;
     /** @notice The cap on the token's total supply. */
     uint256 public supplyCap;
+
+    modifier onlyMinter() {
+        require(msg.sender == minter, "MINTER_ONLY");
+        _;
+    }
 
     function initialize() external initializer {
         // initialize ancestor storage
@@ -33,8 +40,13 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
      * @dev Can only be used by account set as `minter`.  This should be the
      * smart contract that disburses the liquidity mining rewards.
      */
-    function mint(address account, uint256 amount) external {
+    function mint(address account, uint256 amount) external onlyMinter {
         _mint(account, amount);
+    }
+
+    function setMinter(address newMinter) external onlyOwner {
+        require(newMinter != address(0), "INVALID_ADDRESS");
+        minter = newMinter;
     }
 
     /**
