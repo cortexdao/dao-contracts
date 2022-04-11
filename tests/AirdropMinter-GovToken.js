@@ -63,6 +63,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
   // signers
   let deployer;
   let user;
+  // impersonated MAINNET signer
+  let apyDeployer;
 
   // deployed contracts
   let minter;
@@ -106,8 +108,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       "IApyGovernanceToken",
       GOV_TOKEN_ADDRESS
     );
-    const apyDeployer = await impersonateAccount(await govToken.owner(), 1000);
-    await govToken.connect(apyDeployer).transferOwnership(deployer.address);
+    apyDeployer = await impersonateAccount(await govToken.owner(), 1000);
   });
 
   before("Attach to blAPY contract", async () => {
@@ -229,11 +230,11 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     before("Set lock end", async () => {
       const timestamp = (await ethers.provider.getBlock()).timestamp;
       const lockEnd = timestamp + SECONDS_IN_DAY * 7;
-      await govToken.connect(deployer).setLockEnd(lockEnd);
+      await govToken.connect(apyDeployer).setLockEnd(lockEnd);
     });
 
     before("Add minter as APY locker", async () => {
-      await govToken.connect(deployer).addLocker(minter.address);
+      await govToken.connect(apyDeployer).addLocker(minter.address);
     });
 
     before("Add minter as DAO token minter", async () => {
@@ -242,7 +243,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
     before("Prepare user APY balance", async () => {
       userBalance = tokenAmountToBigNumber("1000");
-      await govToken.connect(deployer).transfer(user.address, userBalance);
+      await govToken.connect(apyDeployer).transfer(user.address, userBalance);
     });
 
     it("Successfully mint DAO tokens", async () => {
@@ -254,14 +255,14 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
     it("Unsuccessfully mint DAO tokens when aidrop has ended", async () => {
       expect(await daoToken.balanceOf(user.address)).to.equal(0);
-      await govToken.connect(deployer).setLockEnd(0);
+      await govToken.connect(apyDeployer).setLockEnd(0);
       await expect(minter.connect(user).mint()).to.be.revertedWith(
         "AIRDROP_INACTIVE"
       );
     });
 
     it("Unsuccessfully mint if minter isn't a locker", async () => {
-      await govToken.connect(deployer).removeLocker(minter.address);
+      await govToken.connect(apyDeployer).removeLocker(minter.address);
       await expect(minter.connect(user).mint()).to.be.revertedWith(
         "LOCKER_ONLY"
       );
@@ -279,7 +280,9 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       await minter.connect(user).mint();
       // accumulate more APY and mint
       const transferAmount = tokenAmountToBigNumber("288");
-      await govToken.connect(deployer).transfer(user.address, transferAmount);
+      await govToken
+        .connect(apyDeployer)
+        .transfer(user.address, transferAmount);
       await minter.connect(user).mint();
 
       const mintAmount = convertToCdxAmount(userBalance.add(transferAmount));
@@ -315,11 +318,11 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     before("Set lock end", async () => {
       const timestamp = (await ethers.provider.getBlock()).timestamp;
       const lockEnd = timestamp + SECONDS_IN_DAY * 14; // lock ends in 2 weeks
-      await govToken.connect(deployer).setLockEnd(lockEnd);
+      await govToken.connect(apyDeployer).setLockEnd(lockEnd);
     });
 
-    before("Add minter as locker", async () => {
-      await govToken.connect(deployer).addLocker(minter.address);
+    before("Add minter as APY locker", async () => {
+      await govToken.connect(apyDeployer).addLocker(minter.address);
     });
 
     before("Setup user delegation to daoToken", async () => {
@@ -328,7 +331,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
     before("Prepare user APY balance", async () => {
       userAPYBal = tokenAmountToBigNumber("1000");
-      await govToken.connect(deployer).transfer(user.address, userAPYBal);
+      await govToken.connect(apyDeployer).transfer(user.address, userAPYBal);
       await govToken.connect(user).approve(blApy.address, userAPYBal);
     });
 
@@ -430,7 +433,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
       // mint the boost locked DAO tokens
       expect((await daoVotingEscrow.locked(user.address))[0]).to.equal(0);
-      await govToken.connect(deployer).setLockEnd(0);
+      await govToken.connect(apyDeployer).setLockEnd(0);
       await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
         "AIRDROP_INACTIVE"
       );
@@ -472,16 +475,16 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     before("Set lock end", async () => {
       const timestamp = (await ethers.provider.getBlock()).timestamp;
       const lockEnd = timestamp + SECONDS_IN_DAY * 7;
-      await govToken.connect(deployer).setLockEnd(lockEnd);
+      await govToken.connect(apyDeployer).setLockEnd(lockEnd);
     });
 
-    before("Add minter as locker", async () => {
-      await govToken.connect(deployer).addLocker(minter.address);
+    before("Add minter as APY locker", async () => {
+      await govToken.connect(apyDeployer).addLocker(minter.address);
     });
 
     before("Prepare user APY balance", async () => {
       userBalance = tokenAmountToBigNumber("1000");
-      await govToken.connect(deployer).transfer(user.address, userBalance);
+      await govToken.connect(apyDeployer).transfer(user.address, userBalance);
     });
 
     after(async () => {
@@ -537,11 +540,11 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     });
 
     it("Expire Airdrop", async () => {
-      await govToken.connect(deployer).setLockEnd(0);
+      await govToken.connect(apyDeployer).setLockEnd(0);
     });
 
     it("Verify that the minter detects when Airdrop has ended", async () => {
-      await govToken.connect(deployer).setLockEnd(0);
+      await govToken.connect(apyDeployer).setLockEnd(0);
       expect(await minter.connect(user).isAirdropActive(), true);
     });
 
@@ -556,7 +559,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
         claimAmount
       );
       let recipientData = [nonce, user.address, claimAmount];
-      await govToken.connect(deployer).setLockEnd(0);
+      await govToken.connect(apyDeployer).setLockEnd(0);
       await expect(
         minter.connect(user).claimApyAndMint(recipientData, v, r, s)
       ).to.be.revertedWith("AIRDROP_INACTIVE");
