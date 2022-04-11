@@ -53,8 +53,7 @@ contract AirdropMinter {
 
         // bonus takes into account user's time commitment
         uint256 blApyBalance = blApy.balanceOf(msg.sender);
-        uint256 bonusAmount =
-            (blApyBalance * _BONUS_NUMERATOR) / _BONUS_DENOMINATOR;
+        uint256 bonusAmount = _computeBonus(blApyBalance);
 
         uint256 cxdLockedAmount = _convertAmount(blApyLockedAmount);
         uint256 mintAmount = cxdLockedAmount + bonusAmount;
@@ -114,6 +113,15 @@ contract AirdropMinter {
         IApyGovernanceToken apyToken = IApyGovernanceToken(APY_TOKEN_ADDRESS);
         // solhint-disable-next-line not-rely-on-time
         return block.timestamp < apyToken.lockEnd();
+    }
+
+    /** @dev convert blAPY balance to CXD bonus for boost-lockers minting */
+    function _computeBonus(uint256 blApyBalance)
+        internal
+        view
+        returns (uint256)
+    {
+        return (blApyBalance * _BONUS_NUMERATOR) / _BONUS_DENOMINATOR;
     }
 
     /** @dev convert APY token amount to CXD token amount */
