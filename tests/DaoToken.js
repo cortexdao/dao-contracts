@@ -138,11 +138,15 @@ describe("DaoToken unit tests", () => {
 
   describe("setSupplyCap", () => {
     it("Permissioned can set", async () => {
-      expect.fail();
+      await expect(
+        daoToken.connect(deployer).setSupplyCap(tokenAmountToBigNumber("100"))
+      ).to.not.be.reverted;
     });
 
     it("Unpermissioned cannot set", async () => {
-      expect.fail();
+      await expect(
+        daoToken.connect(randomUser).setSupplyCap(tokenAmountToBigNumber("100"))
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("Cannot set zero cap", async () => {
