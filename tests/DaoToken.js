@@ -3,6 +3,7 @@ const hre = require("hardhat");
 const { ethers } = hre;
 const timeMachine = require("ganache-time-traveler");
 const { ZERO_ADDRESS, tokenAmountToBigNumber } = require("./utils");
+const { deployMockContract } = require("@ethereum-waffle/mock-contract");
 
 describe("DaoToken deployment", () => {
   // contract factories
@@ -113,11 +114,16 @@ describe("DaoToken unit tests", () => {
 
   describe("setMinter", () => {
     it("Permissioned can set minter", async () => {
-      expect.fail();
+      const contract = await deployMockContract(deployer, []);
+      await expect(daoToken.connect(deployer).setMinter(contract.address)).to
+        .not.be.reverted;
     });
 
     it("Unpermissioned cannot set minter", async () => {
-      expect.fail();
+      const contract = await deployMockContract(deployer, []);
+      await expect(
+        daoToken.connect(randomUser).setMinter(contract.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
