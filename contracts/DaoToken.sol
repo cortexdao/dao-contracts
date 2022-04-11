@@ -11,7 +11,8 @@ import {
 } from "contracts/proxy/Imports.sol";
 
 contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
-    uint256 private _supplyCap;
+    /** @notice The cap on the token's total supply. */
+    uint256 public supplyCap;
 
     function initialize() external initializer {
         // initialize ancestor storage
@@ -44,16 +45,9 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
         _setSupplyCap(newCap);
     }
 
-    /**
-     * @dev Returns the cap on the token's total supply.
-     */
-    function supplyCap() public view virtual returns (uint256) {
-        return _supplyCap;
-    }
-
     function _mint(address account, uint256 amount) internal virtual override {
         require(
-            ERC20Upgradeable.totalSupply() + amount <= supplyCap(),
+            ERC20Upgradeable.totalSupply() + amount <= supplyCap,
             "SUPPLY_CAP_EXCEEDED"
         );
         ERC20Upgradeable._mint(account, amount);
@@ -62,6 +56,6 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
     function _setSupplyCap(uint256 newCap) internal {
         require(newCap > 0, "ZERO_SUPPLY_CAP");
         require(newCap > ERC20Upgradeable.totalSupply(), "INVALID_SUPPLY_CAP");
-        _supplyCap = newCap;
+        supplyCap = newCap;
     }
 }
