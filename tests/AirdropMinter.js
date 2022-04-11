@@ -228,11 +228,27 @@ describe("AirdropMinter unit tests", () => {
       const apyAmt = ethers.BigNumber.from(1029);
       await govToken.mock.lockEnd.returns(ethers.constants.MaxInt256);
       await govToken.mock.unlockedBalance.returns(apyAmt);
-      await govToken.mock.lockAmount.returns();
-      // 1029 * 271828182 / 1e8 = 2797; computed mintAmount
+
+      // first, the right APY amount has to be locked by the APY Gov Token;
+      // 1. only revert if the call is made with right args
+      await govToken.mock.lockAmount
+        .withArgs(user.address, apyAmt)
+        .revertsWithReason("PASS_THE_TEST");
+      await expect(minter.connect(user).mint()).to.be.revertedWith(
+        "PASS_THE_TEST"
+      );
+      // 2. now that we know the call is made, undo revert
+      await govToken.mock.lockAmount.withArgs(user.address, apyAmt).returns();
+
+      // lastly, the right CXD amount needs to be minted
+      // 1. only revert if the call is made with right args
       const cdxAmt = convertToCdxAmount(apyAmt);
-      await daoToken.mock.mint.withArgs(user.address, cdxAmt).returns();
-      await expect(minter.connect(user).mint()).to.not.be.reverted;
+      await daoToken.mock.mint
+        .withArgs(user.address, cdxAmt)
+        .revertsWithReason("PASS_THE_TEST");
+      await expect(minter.connect(user).mint()).to.be.revertedWith(
+        "PASS_THE_TEST"
+      );
     });
   });
 
