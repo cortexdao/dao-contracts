@@ -2,11 +2,7 @@ const { expect } = require("chai");
 const hre = require("hardhat");
 const { ethers } = hre;
 const timeMachine = require("ganache-time-traveler");
-const {
-  tokenAmountToBigNumber,
-  impersonateAccount,
-  getProxyAdmin,
-} = require("./utils");
+const { tokenAmountToBigNumber, impersonateAccount } = require("./utils");
 
 const SECONDS_IN_DAY = 86400;
 const SECONDS_IN_WEEK = SECONDS_IN_DAY * 7;
@@ -75,7 +71,6 @@ describe("AirdropMinter - APY Gov Token integration", () => {
   // MAINNET contracts
   let govToken;
   let blApy;
-  let proxyAdmin;
 
   // use EVM snapshots for test isolation
   let testSnapshotId;
@@ -111,8 +106,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       "IApyGovernanceToken",
       GOV_TOKEN_ADDRESS
     );
-    proxyAdmin = await getProxyAdmin(govToken.address);
-    deployer = await impersonateAccount(await proxyAdmin.owner(), 1000);
+    const apyDeployer = await impersonateAccount(await govToken.owner(), 1000);
+    await govToken.connect(apyDeployer).transferOwnership(deployer.address);
   });
 
   before("Attach to blAPY contract", async () => {
@@ -122,6 +117,10 @@ describe("AirdropMinter - APY Gov Token integration", () => {
   before("Deploy DAO token", async () => {
     const DaoToken = await ethers.getContractFactory("DaoToken");
     const logic = await DaoToken.deploy();
+
+    const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
+    const proxyAdmin = await ProxyAdmin.deploy();
+
     const TransparentUpgradeableProxy = await ethers.getContractFactory(
       "TransparentUpgradeableProxy"
     );
@@ -134,6 +133,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       proxyAdmin.address,
       initData
     );
+
     daoToken = await DaoToken.attach(proxy.address);
   });
 
@@ -232,8 +232,12 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       await govToken.connect(deployer).setLockEnd(lockEnd);
     });
 
-    before("Add minter as locker", async () => {
+    before("Add minter as APY locker", async () => {
       await govToken.connect(deployer).addLocker(minter.address);
+    });
+
+    before("Add minter as DAO token minter", async () => {
+      await daoToken.connect(deployer).setMinter(minter.address);
     });
 
     before("Prepare user APY balance", async () => {

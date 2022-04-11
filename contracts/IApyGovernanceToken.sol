@@ -12,7 +12,11 @@ interface IApyGovernanceToken is IDetailedERC20 {
 
     function removeLocker(address locker) external;
 
+    function transferOwnership(address newOwner) external;
+
     function lockEnd() external view returns (uint256);
 
     function unlockedBalance(address account) external view returns (uint256);
+
+    function owner() external view returns (address);
 }
