@@ -111,6 +111,16 @@ describe("DaoToken unit tests", () => {
     });
   });
 
+  describe("setMinter", () => {
+    it("Permissioned can set minter", async () => {
+      expect.fail();
+    });
+
+    it("Unpermissioned cannot set minter", async () => {
+      expect.fail();
+    });
+  });
+
   describe("mint", () => {
     it("Permissioned can mint", async () => {
       expect.fail();
