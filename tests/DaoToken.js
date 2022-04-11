@@ -125,6 +125,12 @@ describe("DaoToken unit tests", () => {
         daoToken.connect(randomUser).setMinter(contract.address)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
+
+    it("Cannot set to zero address", async () => {
+      await expect(
+        daoToken.connect(deployer).setMinter(ZERO_ADDRESS)
+      ).to.be.revertedWith("INVALID_ADDRESS");
+    });
   });
 
   describe("mint", () => {
