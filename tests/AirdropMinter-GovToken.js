@@ -325,6 +325,10 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       await govToken.connect(apyDeployer).addLocker(minter.address);
     });
 
+    before("Add minter as DAO token minter", async () => {
+      await daoToken.connect(deployer).setMinter(minter.address);
+    });
+
     before("Setup user delegation to daoToken", async () => {
       await daoVotingEscrow.connect(user).assign_delegate(minter.address);
     });
@@ -480,6 +484,10 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
     before("Add minter as APY locker", async () => {
       await govToken.connect(apyDeployer).addLocker(minter.address);
+    });
+
+    before("Add minter as DAO token minter", async () => {
+      await daoToken.connect(deployer).setMinter(minter.address);
     });
 
     before("Prepare user APY balance", async () => {
