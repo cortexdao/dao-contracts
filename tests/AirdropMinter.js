@@ -145,9 +145,11 @@ describe("AirdropMinter unit tests", () => {
 
   before("Deploy DAO token minter", async () => {
     const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
+    const bonusInBps = 100;
     minter = await AirdropMinter.deploy(
       daoToken.address,
-      daoVotingEscrow.address
+      daoVotingEscrow.address,
+      bonusInBps
     );
   });
 
@@ -157,7 +159,8 @@ describe("AirdropMinter unit tests", () => {
       await expect(
         AirdropMinter.deploy(
           ethers.constants.AddressZero,
-          daoVotingEscrow.address
+          daoVotingEscrow.address,
+          100
         )
       ).to.be.revertedWith("INVALID_DAO_ADDRESS");
     });
@@ -165,7 +168,11 @@ describe("AirdropMinter unit tests", () => {
     it("Contract fails to deploy when passed invalid Escrow address", async () => {
       const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
       await expect(
-        AirdropMinter.deploy(daoToken.address, ethers.constants.AddressZero)
+        AirdropMinter.deploy(
+          daoToken.address,
+          ethers.constants.AddressZero,
+          100
+        )
       ).to.be.revertedWith("INVALID_ESCROW_ADDRESS");
     });
   });

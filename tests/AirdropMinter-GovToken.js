@@ -149,9 +149,11 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
   before("Deploy DAO token minter", async () => {
     const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
+    const bonusInBps = 100;
     minter = await AirdropMinter.deploy(
       daoToken.address,
-      daoVotingEscrow.address
+      daoVotingEscrow.address,
+      bonusInBps
     );
   });
 
@@ -161,7 +163,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       await expect(
         AirdropMinter.deploy(
           ethers.constants.AddressZero,
-          daoVotingEscrow.address
+          daoVotingEscrow.address,
+          100
         )
       ).to.be.revertedWith("INVALID_DAO_ADDRESS");
     });
@@ -169,7 +172,11 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     it("Contract fails to deploy when passed invalid Escrow address", async () => {
       const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
       await expect(
-        AirdropMinter.deploy(daoToken.address, ethers.constants.AddressZero)
+        AirdropMinter.deploy(
+          daoToken.address,
+          ethers.constants.AddressZero,
+          100
+        )
       ).to.be.revertedWith("INVALID_ESCROW_ADDRESS");
     });
   });
