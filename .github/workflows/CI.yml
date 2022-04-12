@@ -55,7 +55,7 @@ jobs:
         yarn clean
         yarn compile
     - name: Tests
-      run: yarn tests
+      run: yarn test
       env:
         ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
     - name: Check for dot-only
