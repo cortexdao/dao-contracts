@@ -23,6 +23,9 @@ const hre = require("hardhat");
 const { ethers, network } = require("hardhat");
 const { getMaxFee, getMaxPriorityFee } = require("../gas");
 
+const DAO_TOKEN_LOGIC_ADDRESS = "0x00";
+const PROXY_ADMIN_ADDRESS = "0x00";
+
 // eslint-disable-next-line no-unused-vars
 async function main(argv) {
   const networkName = network.name.toUpperCase();
@@ -42,7 +45,7 @@ async function main(argv) {
     (await ethers.provider.getBalance(safeOwner.address)).toString() / 1e18;
   console.log("ETH balance (Safe owner): %s", balance);
 
-  const contractName = "DaoToken";
+  const contractName = "TransparentUpgradeableProxy";
   console.log(`${contractName} deploy`);
   console.log("");
 
@@ -53,33 +56,35 @@ async function main(argv) {
     await hre.run("compile:one", { contractName });
   }
 
-  let maxFeePerGas = await getMaxFee(argv.maxFeePerGas);
-  let maxPriorityFeePerGas = await getMaxPriorityFee(argv.maxPriorityFeePerGas);
+  const maxFeePerGas = await getMaxFee(argv.maxFeePerGas);
+  const maxPriorityFeePerGas = await getMaxPriorityFee(
+    argv.maxPriorityFeePerGas
+  );
 
   console.log("Deploying ... ");
   console.log("");
 
   const contractFactory = await ethers.getContractFactory(contractName);
+  const DaoToken = await ethers.getContractFactory("DaoToken");
+  const initData = DaoToken.interface.encodeFunctionData("initialize()", []);
   const contract = await contractFactory
     .connect(safeOwner)
-    .deploy({ maxFeePerGas, maxPriorityFeePerGas });
+    .deploy(DAO_TOKEN_LOGIC_ADDRESS, PROXY_ADMIN_ADDRESS, initData, {
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+    });
   await contract.deployTransaction.wait(5);
 
   console.log("Contract address: %s", contract.address);
 
-  maxFeePerGas = await getMaxFee(argv.maxFeePerGas);
-  maxPriorityFeePerGas = await getMaxPriorityFee(argv.maxPriorityFeePerGas);
-
-  console.log("Initializing ... ");
-  console.log("");
-  const tx = await contract
-    .connect(safeOwner)
-    .initialize({ maxFeePerGas, maxPriorityFeePerGas });
-  await tx.wait(2);
-
   console.log("Verifying on Etherscan ...");
   await hre.run("verify:verify", {
     address: contract.address,
+    constructorArguments: [
+      DAO_TOKEN_LOGIC_ADDRESS,
+      PROXY_ADMIN_ADDRESS,
+      initData,
+    ],
   });
 }
 
