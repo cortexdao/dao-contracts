@@ -1,0 +1,62 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the main and develop branches.
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:        
+  test:
+    strategy:
+      matrix:
+        node-version: [14.x]
+        os: [ubuntu-latest]
+
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+
+    # Defaults across all steps
+    defaults:
+      run:
+        shell: bash
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+      with:
+        clean: true
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Cache packages
+      uses: actions/cache@v2
+      id: yarn-cache
+      with:
+        path: ./node_modules
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+    - name: Install packages 
+      run: yarn install
+      if: steps.yarn-cache.outputs.cache-hit != 'true'
+    - name: Lint smart contracts
+      run: yarn lint
+    - name: Compile smart contracts
+      run: |
+        yarn config set script-shell /bin/bash
+        yarn clean
+        yarn compile
+    - name: Tests
+      run: yarn tests
+      env:
+        ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+    - name: Check for dot-only
+      run: yarn dot-only
