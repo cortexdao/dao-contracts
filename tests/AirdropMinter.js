@@ -5,7 +5,7 @@ const { deployMockContract } = waffle;
 const timeMachine = require("ganache-time-traveler");
 const { tokenAmountToBigNumber, impersonateAccount } = require("./utils");
 
-const IApyGovernanceToken = artifacts.readArtifactSync("IApyGovernanceToken");
+const ITimeLockToken = artifacts.readArtifactSync("ITimeLockToken");
 const IVotingEscrow = artifacts.readArtifactSync("IVotingEscrow");
 const DaoToken = artifacts.readArtifactSync("DaoToken");
 const DaoVotingEscrow = artifacts.readArtifactSync("DaoVotingEscrow");
@@ -102,10 +102,7 @@ describe("AirdropMinter unit tests", () => {
       "0x2",
     ]);
     const apyDeployerSigner = await impersonateAccount(apyDeployerAddress);
-    govToken = await deployMockContract(
-      apyDeployerSigner,
-      IApyGovernanceToken.abi
-    );
+    govToken = await deployMockContract(apyDeployerSigner, ITimeLockToken.abi);
     expect(govToken.address).to.equal(APY_TOKEN_ADDRESS);
   });
 

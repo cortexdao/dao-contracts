@@ -110,10 +110,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
   before("Attach to APY Governance Token", async () => {
     [deployer, user] = await ethers.getSigners();
 
-    govToken = await ethers.getContractAt(
-      "IApyGovernanceToken",
-      GOV_TOKEN_ADDRESS
-    );
+    govToken = await ethers.getContractAt("ITimeLockToken", GOV_TOKEN_ADDRESS);
     proxyAdmin = await getProxyAdmin(govToken.address);
     deployer = await impersonateAccount(await proxyAdmin.owner(), 1000);
   });

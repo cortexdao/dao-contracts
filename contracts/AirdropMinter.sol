@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSDL-1.1
 pragma solidity 0.8.9;
 
-import {IApyGovernanceToken} from "contracts/IApyGovernanceToken.sol";
+import {ITimeLockToken} from "contracts/ITimeLockToken.sol";
 import {IVotingEscrow} from "contracts/IVotingEscrow.sol";
 import {IRewardDistributor} from "contracts/IRewardDistributor.sol";
 import {DaoToken} from "contracts/DaoToken.sol";
@@ -47,7 +47,7 @@ contract AirdropMinter {
         uint256 blApyLockEnd = locked.end;
 
         require(
-            IApyGovernanceToken(APY_TOKEN_ADDRESS).lockEnd() <= blApyLockEnd,
+            ITimeLockToken(APY_TOKEN_ADDRESS).lockEnd() <= blApyLockEnd,
             "BOOST_LOCK_ENDS_TOO_EARLY"
         );
 
@@ -85,7 +85,7 @@ contract AirdropMinter {
     function mint() public returns (uint256) {
         require(isAirdropActive(), "AIRDROP_INACTIVE");
 
-        IApyGovernanceToken apy = IApyGovernanceToken(APY_TOKEN_ADDRESS);
+        ITimeLockToken apy = ITimeLockToken(APY_TOKEN_ADDRESS);
         uint256 unlockedApyBalance = apy.unlockedBalance(msg.sender);
 
         apy.lockAmount(msg.sender, unlockedApyBalance);
@@ -96,7 +96,7 @@ contract AirdropMinter {
     }
 
     function isAirdropActive() public view returns (bool) {
-        IApyGovernanceToken apyToken = IApyGovernanceToken(APY_TOKEN_ADDRESS);
+        ITimeLockToken apyToken = ITimeLockToken(APY_TOKEN_ADDRESS);
         // solhint-disable-next-line not-rely-on-time
         return block.timestamp < apyToken.lockEnd();
     }
