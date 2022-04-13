@@ -121,7 +121,9 @@ contract AirdropMinter {
         view
         returns (uint256)
     {
-        return (blApyBalance * _BONUS_NUMERATOR) / _BONUS_DENOMINATOR;
+        uint256 unconvertedBonus =
+            (blApyBalance * _BONUS_NUMERATOR) / _BONUS_DENOMINATOR;
+        return _convertAmount(unconvertedBonus);
     }
 
     /** @dev convert APY token amount to CXD token amount */

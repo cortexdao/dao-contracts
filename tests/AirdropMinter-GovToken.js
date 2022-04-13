@@ -368,9 +368,10 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       expect(apyLockEnd).to.equal(cxdLockEnd);
       // check user has gained the CXD bonus
       const blApyBalance = await blApy.balanceOf(user.address);
-      const expectedCxdBonus = blApyBalance
+      const unconvertedBonus = blApyBalance
         .mul(BONUS_NUMERATOR)
         .div(BONUS_DENOMINATOR);
+      const expectedCxdBonus = convertToCxdAmount(unconvertedBonus);
       expect(await daoToken.balanceOf(user.address)).to.equal(expectedCxdBonus);
     });
 

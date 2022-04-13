@@ -288,7 +288,10 @@ describe("AirdropMinter unit tests", () => {
       // first, the right CXD amount needs to be minted
       // 1. only revert if the call is made with the right args
       const cdxAmount = convertToCdxAmount(apyAmt);
-      const bonus = blApyBalance.mul(BONUS_NUMERATOR).div(BONUS_DENOMINATOR);
+      const unconvertedBonus = blApyBalance
+        .mul(BONUS_NUMERATOR)
+        .div(BONUS_DENOMINATOR);
+      const bonus = convertToCdxAmount(unconvertedBonus);
       const cdxAmountWithBonus = cdxAmount.add(bonus);
       await daoToken.mock.mint
         .withArgs(user.address, cdxAmountWithBonus)
