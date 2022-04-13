@@ -151,7 +151,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
   });
 
   before("Deploy DAO token minter", async () => {
-    const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
+    const AirdropMinter = await ethers.getContractFactory("TestAirdropMinter");
     const bonusInBps = 100;
     minter = await AirdropMinter.deploy(
       daoToken.address,
@@ -514,7 +514,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
       expect(await govToken.balanceOf(user.address)).to.equal(userBalance);
 
-      await expect(minter.claimApy(recipientData, v, r, s))
+      await expect(minter.testClaimApy(recipientData, v, r, s))
         .to.emit(govToken, "Transfer")
         .withArgs(rewardDistributor.address, user.address, claimAmount);
 

@@ -146,7 +146,7 @@ describe("AirdropMinter unit tests", () => {
   });
 
   before("Deploy DAO token minter", async () => {
-    const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
+    const AirdropMinter = await ethers.getContractFactory("TestAirdropMinter");
     const bonusInBps = 100;
     minter = await AirdropMinter.deploy(
       daoToken.address,
@@ -191,7 +191,7 @@ describe("AirdropMinter unit tests", () => {
     });
   });
 
-  describe("claimAPY", () => {
+  describe("_claimAPY", () => {
     it("unsuccessfully claim ", async () => {
       const claimAmount = tokenAmountToBigNumber("123");
       const nonce = "0";
@@ -204,9 +204,9 @@ describe("AirdropMinter unit tests", () => {
       );
       let recipientData = [nonce, user.address, claimAmount];
       await rewardDistributor.mock.claim.revertsWithReason("claiming failed");
-      await expect(minter.claimApy(recipientData, v, r, s)).to.be.revertedWith(
-        "claiming failed"
-      );
+      await expect(
+        minter.testClaimApy(recipientData, v, r, s)
+      ).to.be.revertedWith("claiming failed");
     });
 
     it("successfully claim ", async () => {
@@ -221,7 +221,8 @@ describe("AirdropMinter unit tests", () => {
       );
       let recipientData = [nonce, user.address, claimAmount];
       await rewardDistributor.mock.claim.returns();
-      await expect(minter.claimApy(recipientData, v, r, s)).to.not.be.reverted;
+      await expect(minter.testClaimApy(recipientData, v, r, s)).to.not.be
+        .reverted;
     });
   });
 

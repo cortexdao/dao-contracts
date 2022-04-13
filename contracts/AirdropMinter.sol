@@ -78,22 +78,8 @@ contract AirdropMinter {
         bytes32 s
     ) external returns (uint256) {
         require(isAirdropActive(), "AIRDROP_INACTIVE");
-        claimApy(recipient, v, r, s);
+        _claimApy(recipient, v, r, s);
         return mint();
-    }
-
-    function claimApy(
-        IRewardDistributor.Recipient calldata recipient,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) public {
-        IRewardDistributor(APY_REWARD_DISTRIBUTOR_ADDRESS).claim(
-            recipient,
-            v,
-            r,
-            s
-        );
     }
 
     function mint() public returns (uint256) {
@@ -113,6 +99,20 @@ contract AirdropMinter {
         IApyGovernanceToken apyToken = IApyGovernanceToken(APY_TOKEN_ADDRESS);
         // solhint-disable-next-line not-rely-on-time
         return block.timestamp < apyToken.lockEnd();
+    }
+
+    function _claimApy(
+        IRewardDistributor.Recipient calldata recipient,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal {
+        IRewardDistributor(APY_REWARD_DISTRIBUTOR_ADDRESS).claim(
+            recipient,
+            v,
+            r,
+            s
+        );
     }
 
     /** @dev convert blAPY balance to CXD bonus for boost-lockers minting */
