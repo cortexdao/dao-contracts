@@ -224,6 +224,13 @@ describe("AirdropMinter unit tests", () => {
   });
 
   describe("mint()", () => {
+    it("Revert when airdrop is inactive", async () => {
+      await govToken.mock.lockEnd.returns(0);
+      await expect(minter.connect(user).mint()).to.be.revertedWith(
+        "AIRDROP_INACTIVE"
+      );
+    });
+
     it("Calls external contracts with the right args", async () => {
       const apyAmt = ethers.BigNumber.from(1029);
       await govToken.mock.lockEnd.returns(ethers.constants.MaxInt256);
@@ -253,6 +260,13 @@ describe("AirdropMinter unit tests", () => {
   });
 
   describe("mintLocked()", () => {
+    it("Revert when airdrop is inactive", async () => {
+      await govToken.mock.lockEnd.returns(0);
+      await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
+        "AIRDROP_INACTIVE"
+      );
+    });
+
     it("Revert when no locked amount", async () => {
       await govToken.mock.lockEnd.returns(ethers.constants.MaxInt256);
       const blApyLockedAmt = 0;
@@ -310,6 +324,27 @@ describe("AirdropMinter unit tests", () => {
       await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
         "PASS_THE_TEST_2"
       );
+    });
+  });
+
+  describe("claimApyAndMint", () => {
+    it("Revert when airdrop is inactive", async () => {
+      await govToken.mock.lockEnd.returns(0);
+
+      const claimAmount = tokenAmountToBigNumber("123");
+      const nonce = "0";
+      const { v, r, s } = await generateSignature(
+        DISTRIBUTOR_SIGNER_KEY,
+        APY_REWARD_DISTRIBUTOR_ADDRESS,
+        nonce,
+        user.address,
+        claimAmount
+      );
+      const recipientData = [nonce, user.address, claimAmount];
+
+      await expect(
+        minter.connect(user).claimApyAndMint(recipientData, v, r, s)
+      ).to.be.revertedWith("AIRDROP_INACTIVE");
     });
   });
 });
