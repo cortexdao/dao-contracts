@@ -60,13 +60,6 @@ jobs:
         ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
     - name: Check for dot-only
       run: yarn dot-only
+    - name: Slither static analysis
+      uses: crytic/slither-action@v0.1.1
 
-  analyze:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Use Node.js 14.x
-      uses: actions/setup-node@v1
-      with:
-        node-version: 14.x
-    - uses: actions/checkout@v2
-    - uses: crytic/slither-action@v0.1.1
