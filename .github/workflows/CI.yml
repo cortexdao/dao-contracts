@@ -63,5 +63,5 @@ jobs:
     - name: Slither static analysis
       uses: crytic/slither-action@v0.1.1
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 14.19.1
 
