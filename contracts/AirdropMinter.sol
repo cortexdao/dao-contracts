@@ -41,9 +41,7 @@ contract AirdropMinter is ReentrancyGuard {
         IVotingEscrow blApy = IVotingEscrow(BLAPY_TOKEN_ADDRESS);
         IVotingEscrow.LockedBalance memory locked = blApy.locked(msg.sender);
         // amount is int128 so we do a defensive check
-        if (locked.amount <= 0) {
-            revert("NO_BOOST_LOCKED_AMOUNT");
-        }
+        require(locked.amount > 0, "NO_BOOST_LOCKED_AMOUNT");
         uint256 blApyLockedAmount = uint128(locked.amount);
         uint256 blApyLockEnd = locked.end;
 
@@ -51,6 +49,11 @@ contract AirdropMinter is ReentrancyGuard {
             ITimeLockToken(APY_TOKEN_ADDRESS).lockEnd() <= blApyLockEnd,
             "BOOST_LOCK_ENDS_TOO_EARLY"
         );
+
+        IVotingEscrow veToken = IVotingEscrow(VE_TOKEN_ADDRESS);
+        IVotingEscrow.LockedBalance memory newLocked =
+            veToken.locked(msg.sender);
+        require(newLocked.amount == 0, "LOCK_ALREADY_EXISTS");
 
         // bonus takes into account user's time commitment
         uint256 blApyBalance = blApy.balanceOf(msg.sender);
@@ -63,11 +66,7 @@ contract AirdropMinter is ReentrancyGuard {
         DaoToken(DAO_TOKEN_ADDRESS).mint(msg.sender, mintAmount);
         // only lock up the non-bonus in the voting escrow, so
         // the user keeps the bonus unlocked.
-        IVotingEscrow(VE_TOKEN_ADDRESS).create_lock_for(
-            msg.sender,
-            cxdLockedAmount,
-            blApyLockEnd
-        );
+        veToken.create_lock_for(msg.sender, cxdLockedAmount, blApyLockEnd);
 
         return mintAmount;
     }
@@ -88,6 +87,7 @@ contract AirdropMinter is ReentrancyGuard {
 
         ITimeLockToken apy = ITimeLockToken(APY_TOKEN_ADDRESS);
         uint256 unlockedApyBalance = apy.unlockedBalance(msg.sender);
+        require(unlockedApyBalance > 0, "NO_UNLOCKED_BALANCE");
 
         apy.lockAmount(msg.sender, unlockedApyBalance);
         uint256 mintAmount = _convertAmount(unlockedApyBalance);
