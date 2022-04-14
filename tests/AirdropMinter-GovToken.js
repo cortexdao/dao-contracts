@@ -2,7 +2,11 @@ const { expect } = require("chai");
 const hre = require("hardhat");
 const { ethers } = hre;
 const timeMachine = require("ganache-time-traveler");
-const { tokenAmountToBigNumber, impersonateAccount } = require("./utils");
+const {
+  tokenAmountToBigNumber,
+  impersonateAccount,
+  setBlockTime,
+} = require("./utils");
 
 const SECONDS_IN_DAY = 86400;
 const SECONDS_IN_WEEK = SECONDS_IN_DAY * 7;
@@ -239,7 +243,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
     it("Unsuccessfully mint DAO tokens when aidrop has ended", async () => {
       expect(await daoToken.balanceOf(user.address)).to.equal(0);
-      await govToken.connect(apyDeployer).setLockEnd(0);
+      const lockEnd = await govToken.lockEnd();
+      await setBlockTime(lockEnd);
       await expect(minter.connect(user).mint()).to.be.revertedWith(
         "AIRDROP_INACTIVE"
       );
@@ -274,9 +279,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     });
 
     it("Can't mint after airdrop ends", async () => {
-      const lockEnd = (await govToken.lockEnd()).toNumber();
-      await ethers.provider.send("evm_setNextBlockTimestamp", [lockEnd]);
-      await ethers.provider.send("evm_mine");
+      const lockEnd = await govToken.lockEnd();
+      await setBlockTime(lockEnd);
 
       await expect(minter.connect(user).mint()).to.be.revertedWith(
         "AIRDROP_INACTIVE"
@@ -428,7 +432,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
       // mint the boost locked DAO tokens
       expect((await daoVotingEscrow.locked(user.address))[0]).to.equal(0);
-      await govToken.connect(apyDeployer).setLockEnd(0);
+      const lockEnd = await govToken.lockEnd();
+      await setBlockTime(lockEnd);
       await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
         "AIRDROP_INACTIVE"
       );
@@ -539,12 +544,9 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       );
     });
 
-    it("Expire Airdrop", async () => {
-      await govToken.connect(apyDeployer).setLockEnd(0);
-    });
-
     it("Verify that the minter detects when Airdrop has ended", async () => {
-      await govToken.connect(apyDeployer).setLockEnd(0);
+      const lockEnd = await govToken.lockEnd();
+      await setBlockTime(lockEnd);
       expect(await minter.connect(user).isAirdropActive(), true);
     });
 
@@ -559,7 +561,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
         claimAmount
       );
       let recipientData = [nonce, user.address, claimAmount];
-      await govToken.connect(apyDeployer).setLockEnd(0);
+      const lockEnd = await govToken.lockEnd();
+      await setBlockTime(lockEnd);
       await expect(
         minter.connect(user).claimApyAndMint(recipientData, v, r, s)
       ).to.be.revertedWith("AIRDROP_INACTIVE");

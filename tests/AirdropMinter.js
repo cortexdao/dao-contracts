@@ -178,12 +178,16 @@ describe("AirdropMinter unit tests", () => {
 
   describe("isAirdropActive", () => {
     it("airdrop is inactive", async () => {
-      await govToken.mock.lockEnd.returns(0);
+      const currentTimestamp = (await ethers.provider.getBlock()).timestamp;
+      const lockEnd = currentTimestamp - 1;
+      await govToken.mock.lockEnd.returns(lockEnd);
       expect(await minter.isAirdropActive()).to.equal(false);
     });
 
     it("airdrop is active", async () => {
-      await govToken.mock.lockEnd.returns(ethers.constants.MaxInt256);
+      const currentTimestamp = (await ethers.provider.getBlock()).timestamp;
+      const futureTimestamp = currentTimestamp + 604800;
+      await govToken.mock.lockEnd.returns(futureTimestamp);
       expect(await minter.isAirdropActive()).to.equal(true);
     });
   });
@@ -225,7 +229,9 @@ describe("AirdropMinter unit tests", () => {
 
   describe("mint()", () => {
     it("Revert when airdrop is inactive", async () => {
-      await govToken.mock.lockEnd.returns(0);
+      const currentTimestamp = (await ethers.provider.getBlock()).timestamp;
+      const lockEnd = currentTimestamp - 1;
+      await govToken.mock.lockEnd.returns(lockEnd);
       await expect(minter.connect(user).mint()).to.be.revertedWith(
         "AIRDROP_INACTIVE"
       );
@@ -261,7 +267,9 @@ describe("AirdropMinter unit tests", () => {
 
   describe("mintLocked()", () => {
     it("Revert when airdrop is inactive", async () => {
-      await govToken.mock.lockEnd.returns(0);
+      const currentTimestamp = (await ethers.provider.getBlock()).timestamp;
+      const lockEnd = currentTimestamp - 1;
+      await govToken.mock.lockEnd.returns(lockEnd);
       await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
         "AIRDROP_INACTIVE"
       );
@@ -329,7 +337,9 @@ describe("AirdropMinter unit tests", () => {
 
   describe("claimApyAndMint", () => {
     it("Revert when airdrop is inactive", async () => {
-      await govToken.mock.lockEnd.returns(0);
+      const currentTimestamp = (await ethers.provider.getBlock()).timestamp;
+      const lockEnd = currentTimestamp - 1;
+      await govToken.mock.lockEnd.returns(lockEnd);
 
       const claimAmount = tokenAmountToBigNumber("123");
       const nonce = "0";
