@@ -411,7 +411,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
       await minter.connect(user).mintLocked();
       await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
-        "Withdraw old tokens first"
+        "LOCK_ALREADY_EXISTS"
       );
     });
 

@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const hre = require("hardhat");
 const { ethers, waffle, artifacts } = hre;
+const { BigNumber } = ethers;
 const { deployMockContract } = waffle;
 const timeMachine = require("ganache-time-traveler");
 const { tokenAmountToBigNumber, impersonateAccount } = require("./utils");
@@ -238,7 +239,7 @@ describe("AirdropMinter unit tests", () => {
     });
 
     it("Calls external contracts with the right args", async () => {
-      const apyAmt = ethers.BigNumber.from(1029);
+      const apyAmt = BigNumber.from(1029);
       await govToken.mock.lockEnd.returns(ethers.constants.MaxInt256);
       await govToken.mock.unlockedBalance.returns(apyAmt);
 
@@ -286,7 +287,7 @@ describe("AirdropMinter unit tests", () => {
     });
 
     it("Revert when boost lock ends too early", async () => {
-      const apyAmt = ethers.BigNumber.from(1029);
+      const apyAmt = BigNumber.from(1029);
       const timestamp = (await ethers.provider.getBlock()).timestamp;
       const lockEnd = timestamp + SECONDS_IN_DAY * 7;
       await govToken.mock.lockEnd.returns(lockEnd);
@@ -297,7 +298,7 @@ describe("AirdropMinter unit tests", () => {
     });
 
     it("Calls external contracts with the right args", async () => {
-      const apyAmt = ethers.BigNumber.from(1029);
+      const apyAmt = BigNumber.from(1029);
       const timestamp = (await ethers.provider.getBlock()).timestamp;
       const lockEnd = timestamp + SECONDS_IN_DAY * 7;
       await govToken.mock.lockEnd.returns(lockEnd);
@@ -326,6 +327,7 @@ describe("AirdropMinter unit tests", () => {
 
       // lastly, the CXD lock needs to be created;
       // revert only if the call is made with the right args
+      await daoVotingEscrow.mock.locked.returns(0, 0);
       await daoVotingEscrow.mock.create_lock_for
         .withArgs(user.address, cdxAmount, lockEnd)
         .revertsWithReason("PASS_THE_TEST_2");
