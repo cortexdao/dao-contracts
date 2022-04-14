@@ -15,4 +15,6 @@ interface ITimeLockToken is IDetailedERC20 {
     function lockEnd() external view returns (uint256);
 
     function unlockedBalance(address account) external view returns (uint256);
+
+    function owner() external view returns (address);
 }
