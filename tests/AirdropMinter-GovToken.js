@@ -10,6 +10,9 @@ const {
 
 const SECONDS_IN_DAY = 86400;
 const SECONDS_IN_WEEK = SECONDS_IN_DAY * 7;
+const BONUS_NUMERATOR = 100;
+const BONUS_DENOMINATOR = 10000;
+
 const pinnedBlock = 14541023;
 const forkingUrl = hre.config.networks.hardhat.forking.url;
 
@@ -59,7 +62,7 @@ async function generateSignature(
   return { r, s, v };
 }
 
-function convertToCdxAmount(apyAmount) {
+function convertToCxdAmount(apyAmount) {
   return apyAmount.mul(271828182).div(100000000);
 }
 
@@ -107,10 +110,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
   before("Attach to APY Governance Token", async () => {
     [deployer, user] = await ethers.getSigners();
 
-    govToken = await ethers.getContractAt(
-      "IApyGovernanceToken",
-      GOV_TOKEN_ADDRESS
-    );
+    govToken = await ethers.getContractAt("ITimeLockToken", GOV_TOKEN_ADDRESS);
     proxyAdmin = await getProxyAdmin(govToken.address);
     deployer = await impersonateAccount(await proxyAdmin.owner(), 1000);
   });
@@ -148,30 +148,13 @@ describe("AirdropMinter - APY Gov Token integration", () => {
   });
 
   before("Deploy DAO token minter", async () => {
-    const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
+    const AirdropMinter = await ethers.getContractFactory("TestAirdropMinter");
+    const bonusInBps = 100;
     minter = await AirdropMinter.deploy(
       daoToken.address,
-      daoVotingEscrow.address
+      daoVotingEscrow.address,
+      bonusInBps
     );
-  });
-
-  describe("Constructor", () => {
-    it("Contract fails to deploy when passed invalid DAO address", async () => {
-      const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
-      await expect(
-        AirdropMinter.deploy(
-          ethers.constants.AddressZero,
-          daoVotingEscrow.address
-        )
-      ).to.be.revertedWith("INVALID_DAO_ADDRESS");
-    });
-
-    it("Contract fails to deploy when passed invalid Escrow address", async () => {
-      const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
-      await expect(
-        AirdropMinter.deploy(daoToken.address, ethers.constants.AddressZero)
-      ).to.be.revertedWith("INVALID_ESCROW_ADDRESS");
-    });
   });
 
   describe("Defaults", () => {
@@ -244,7 +227,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     it("Successfully mint DAO tokens", async () => {
       expect(await daoToken.balanceOf(user.address)).to.equal(0);
       await minter.connect(user).mint();
-      const mintAmount = convertToCdxAmount(userBalance);
+      const mintAmount = convertToCxdAmount(userBalance);
       expect(await daoToken.balanceOf(user.address)).to.equal(mintAmount);
     });
 
@@ -266,7 +249,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     it("Can't mint more with same APY tokens", async () => {
       await minter.connect(user).mint();
       await minter.connect(user).mint();
-      const mintAmount = convertToCdxAmount(userBalance);
+      const mintAmount = convertToCxdAmount(userBalance);
       expect(await daoToken.balanceOf(user.address)).to.equal(mintAmount);
     });
 
@@ -278,7 +261,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       await govToken.connect(deployer).transfer(user.address, transferAmount);
       await minter.connect(user).mint();
 
-      const mintAmount = convertToCdxAmount(userBalance.add(transferAmount));
+      const mintAmount = convertToCxdAmount(userBalance.add(transferAmount));
       expect(await daoToken.balanceOf(user.address)).to.equal(mintAmount);
     });
 
@@ -329,6 +312,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     });
 
     it("Successfully mint boost-locked DAO tokens", async () => {
+      expect(await daoToken.balanceOf(user.address)).to.equal(0);
+
       // create a lock longer than the lockEnd
       const currentTime = (await ethers.provider.getBlock()).timestamp;
       const unlockTime = ethers.BigNumber.from(
@@ -338,25 +323,29 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
       // user first approves daoVotingEscrow to transfer DAO tokens after mint
       const [apyAmount] = await blApy.locked(user.address);
-      const expectedCdxAmount = convertToCdxAmount(apyAmount);
-      const bonusExpectedCdxAmount = expectedCdxAmount.add(
-        expectedCdxAmount.div(100)
-      );
-      console.log("exp", bonusExpectedCdxAmount.toString());
+      const expectedCxdAmount = convertToCxdAmount(apyAmount);
       await daoToken
         .connect(user)
-        .approve(daoVotingEscrow.address, bonusExpectedCdxAmount);
+        .approve(daoVotingEscrow.address, expectedCxdAmount);
 
       // mint the boost locked DAO tokens
       expect((await daoVotingEscrow.locked(user.address))[0]).to.equal(0);
       await minter.connect(user).mintLocked();
-      // check locked CDX amount is properly converted from APY amount
-      const [cdxAmount] = await daoVotingEscrow.locked(user.address);
-      expect(cdxAmount).to.equal(bonusExpectedCdxAmount);
-      // check CDX lock end is the same as APY lock end
+
+      // check locked CXD amount is properly converted from APY amount
+      const [cxdAmount] = await daoVotingEscrow.locked(user.address);
+      expect(cxdAmount).to.equal(expectedCxdAmount);
+      // check CXD lock end is the same as APY lock end
       const [, apyLockEnd] = await blApy.locked(user.address);
-      const [, cdxLockEnd] = await daoVotingEscrow.locked(user.address);
-      expect(apyLockEnd).to.equal(cdxLockEnd);
+      const [, cxdLockEnd] = await daoVotingEscrow.locked(user.address);
+      expect(apyLockEnd).to.equal(cxdLockEnd);
+      // check user has gained the CXD bonus
+      const blApyBalance = await blApy.balanceOf(user.address);
+      const unconvertedBonus = blApyBalance
+        .mul(BONUS_NUMERATOR)
+        .div(BONUS_DENOMINATOR);
+      const expectedCxdBonus = convertToCxdAmount(unconvertedBonus);
+      expect(await daoToken.balanceOf(user.address)).to.equal(expectedCxdBonus);
     });
 
     it("Unsuccessfully mint boost-locked DAO tokens if no locked blApy", async () => {
@@ -393,15 +382,15 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
       // user first approves daoVotingEscrow to transfer DAO tokens after mint
       const [apyAmount] = await blApy.locked(user.address);
-      const expectedCdxAmount = convertToCdxAmount(apyAmount).add(
+      const expectedCxdAmount = convertToCxdAmount(apyAmount).add(
         apyAmount.div(100)
       );
-      const bonusExpectedCdxAmount = expectedCdxAmount.add(
-        expectedCdxAmount.div(100)
+      const bonusExpectedCxdAmount = expectedCxdAmount.add(
+        expectedCxdAmount.div(100)
       );
       await daoToken
         .connect(user)
-        .approve(daoVotingEscrow.address, bonusExpectedCdxAmount);
+        .approve(daoVotingEscrow.address, bonusExpectedCxdAmount);
 
       await minter.connect(user).mintLocked();
       await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
@@ -419,10 +408,10 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
       // user first approves daoVotingEscrow to transfer DAO tokens after mint
       const [apyAmount] = await blApy.locked(user.address);
-      const expectedCdxAmount = convertToCdxAmount(apyAmount);
+      const expectedCxdAmount = convertToCxdAmount(apyAmount);
       await daoToken
         .connect(user)
-        .approve(daoVotingEscrow.address, expectedCdxAmount);
+        .approve(daoVotingEscrow.address, expectedCxdAmount);
 
       // mint the boost locked DAO tokens
       expect((await daoVotingEscrow.locked(user.address))[0]).to.equal(0);
@@ -498,7 +487,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
       expect(await govToken.balanceOf(user.address)).to.equal(userBalance);
 
-      await expect(minter.claimApy(recipientData, v, r, s))
+      await expect(minter.testClaimApy(recipientData, v, r, s))
         .to.emit(govToken, "Transfer")
         .withArgs(rewardDistributor.address, user.address, claimAmount);
 
@@ -523,12 +512,12 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       await minter.connect(user).claimApyAndMint(recipientData, v, r, s);
 
       const expectedApyBalance = userBalance.add(claimAmount);
-      const expectedCdxBalance = convertToCdxAmount(expectedApyBalance);
+      const expectedCxdBalance = convertToCxdAmount(expectedApyBalance);
       expect(await govToken.balanceOf(user.address)).to.equal(
         expectedApyBalance
       );
       expect(await daoToken.balanceOf(user.address)).to.equal(
-        expectedCdxBalance
+        expectedCxdBalance
       );
     });
 

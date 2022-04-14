@@ -5,13 +5,15 @@ const { deployMockContract } = waffle;
 const timeMachine = require("ganache-time-traveler");
 const { tokenAmountToBigNumber, impersonateAccount } = require("./utils");
 
-const IApyGovernanceToken = artifacts.readArtifactSync("IApyGovernanceToken");
+const ITimeLockToken = artifacts.readArtifactSync("ITimeLockToken");
 const IVotingEscrow = artifacts.readArtifactSync("IVotingEscrow");
 const DaoToken = artifacts.readArtifactSync("DaoToken");
 const DaoVotingEscrow = artifacts.readArtifactSync("DaoVotingEscrow");
 const IRewardDistributor = artifacts.readArtifactSync("IRewardDistributor");
 
 const SECONDS_IN_DAY = 86400;
+const BONUS_NUMERATOR = 100;
+const BONUS_DENOMINATOR = 10000;
 
 const APY_TOKEN_ADDRESS = "0x95a4492F028aa1fd432Ea71146b433E7B4446611";
 const BLAPY_TOKEN_ADDRESS = "0xDC9EFf7BB202Fd60dE3f049c7Ec1EfB08006261f";
@@ -100,10 +102,7 @@ describe("AirdropMinter unit tests", () => {
       "0x2",
     ]);
     const apyDeployerSigner = await impersonateAccount(apyDeployerAddress);
-    govToken = await deployMockContract(
-      apyDeployerSigner,
-      IApyGovernanceToken.abi
-    );
+    govToken = await deployMockContract(apyDeployerSigner, ITimeLockToken.abi);
     expect(govToken.address).to.equal(APY_TOKEN_ADDRESS);
   });
 
@@ -144,10 +143,12 @@ describe("AirdropMinter unit tests", () => {
   });
 
   before("Deploy DAO token minter", async () => {
-    const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
+    const AirdropMinter = await ethers.getContractFactory("TestAirdropMinter");
+    const bonusInBps = 100;
     minter = await AirdropMinter.deploy(
       daoToken.address,
-      daoVotingEscrow.address
+      daoVotingEscrow.address,
+      bonusInBps
     );
   });
 
@@ -157,7 +158,8 @@ describe("AirdropMinter unit tests", () => {
       await expect(
         AirdropMinter.deploy(
           ethers.constants.AddressZero,
-          daoVotingEscrow.address
+          daoVotingEscrow.address,
+          100
         )
       ).to.be.revertedWith("INVALID_DAO_ADDRESS");
     });
@@ -165,7 +167,11 @@ describe("AirdropMinter unit tests", () => {
     it("Contract fails to deploy when passed invalid Escrow address", async () => {
       const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
       await expect(
-        AirdropMinter.deploy(daoToken.address, ethers.constants.AddressZero)
+        AirdropMinter.deploy(
+          daoToken.address,
+          ethers.constants.AddressZero,
+          100
+        )
       ).to.be.revertedWith("INVALID_ESCROW_ADDRESS");
     });
   });
@@ -182,7 +188,7 @@ describe("AirdropMinter unit tests", () => {
     });
   });
 
-  describe("claimAPY", () => {
+  describe("_claimAPY", () => {
     it("unsuccessfully claim ", async () => {
       const claimAmount = tokenAmountToBigNumber("123");
       const nonce = "0";
@@ -195,9 +201,9 @@ describe("AirdropMinter unit tests", () => {
       );
       let recipientData = [nonce, user.address, claimAmount];
       await rewardDistributor.mock.claim.revertsWithReason("claiming failed");
-      await expect(minter.claimApy(recipientData, v, r, s)).to.be.revertedWith(
-        "claiming failed"
-      );
+      await expect(
+        minter.testClaimApy(recipientData, v, r, s)
+      ).to.be.revertedWith("claiming failed");
     });
 
     it("successfully claim ", async () => {
@@ -212,25 +218,56 @@ describe("AirdropMinter unit tests", () => {
       );
       let recipientData = [nonce, user.address, claimAmount];
       await rewardDistributor.mock.claim.returns();
-      await expect(minter.claimApy(recipientData, v, r, s)).to.not.be.reverted;
+      await expect(minter.testClaimApy(recipientData, v, r, s)).to.not.be
+        .reverted;
     });
   });
 
   describe("mint()", () => {
-    it("successfully mint with correct mintAmount", async () => {
+    it("Revert when airdrop is inactive", async () => {
+      await govToken.mock.lockEnd.returns(0);
+      await expect(minter.connect(user).mint()).to.be.revertedWith(
+        "AIRDROP_INACTIVE"
+      );
+    });
+
+    it("Calls external contracts with the right args", async () => {
       const apyAmt = ethers.BigNumber.from(1029);
       await govToken.mock.lockEnd.returns(ethers.constants.MaxInt256);
       await govToken.mock.unlockedBalance.returns(apyAmt);
-      await govToken.mock.lockAmount.returns();
-      // 1029 * 271828182 / 1e8 = 2797; computed mintAmount
+
+      // first, the right APY amount has to be locked by the APY Gov Token;
+      // 1. only revert if the call is made with right args
+      await govToken.mock.lockAmount
+        .withArgs(user.address, apyAmt)
+        .revertsWithReason("PASS_THE_TEST_1");
+      await expect(minter.connect(user).mint()).to.be.revertedWith(
+        "PASS_THE_TEST_1"
+      );
+      // 2. now that we know the call is made, undo revert
+      await govToken.mock.lockAmount.withArgs(user.address, apyAmt).returns();
+
+      // lastly, the right CXD amount needs to be minted;
+      // only revert if the call is made with right args
       const cdxAmt = convertToCdxAmount(apyAmt);
-      await daoToken.mock.mint.withArgs(user.address, cdxAmt).returns();
-      await expect(minter.connect(user).mint()).to.not.be.reverted;
+      await daoToken.mock.mint
+        .withArgs(user.address, cdxAmt)
+        .revertsWithReason("PASS_THE_TEST_2");
+      await expect(minter.connect(user).mint()).to.be.revertedWith(
+        "PASS_THE_TEST_2"
+      );
     });
   });
 
   describe("mintLocked()", () => {
-    it("unsuccessfully mintLocked when no locked amount", async () => {
+    it("Revert when airdrop is inactive", async () => {
+      await govToken.mock.lockEnd.returns(0);
+      await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
+        "AIRDROP_INACTIVE"
+      );
+    });
+
+    it("Revert when no locked amount", async () => {
       await govToken.mock.lockEnd.returns(ethers.constants.MaxInt256);
       const blApyLockedAmt = 0;
       const blApyLockEnd = 99;
@@ -240,7 +277,7 @@ describe("AirdropMinter unit tests", () => {
       );
     });
 
-    it("unsuccessfully mintLocked when boost lock ends too early", async () => {
+    it("Revert when boost lock ends too early", async () => {
       const apyAmt = ethers.BigNumber.from(1029);
       const timestamp = (await ethers.provider.getBlock()).timestamp;
       const lockEnd = timestamp + SECONDS_IN_DAY * 7;
@@ -251,21 +288,63 @@ describe("AirdropMinter unit tests", () => {
       );
     });
 
-    it("successfully mintLocked with correct mintAmount", async () => {
+    it("Calls external contracts with the right args", async () => {
       const apyAmt = ethers.BigNumber.from(1029);
       const timestamp = (await ethers.provider.getBlock()).timestamp;
       const lockEnd = timestamp + SECONDS_IN_DAY * 7;
       await govToken.mock.lockEnd.returns(lockEnd);
       await blApy.mock.locked.returns([apyAmt, lockEnd]);
-      // 1029 * 271828182 / 1e8 = 2797; computed mintAmount
-      const cdxAmt = convertToCdxAmount(apyAmt);
-      const cdxBonusAmt = cdxAmt.add(cdxAmt.div(100));
-      await daoToken.mock.mint.withArgs(user.address, cdxBonusAmt).returns();
-      await daoVotingEscrow.mock.create_lock_for
-        .withArgs(user.address, cdxBonusAmt, lockEnd)
+      const blApyBalance = tokenAmountToBigNumber("2187");
+      await blApy.mock.balanceOf.withArgs(user.address).returns(blApyBalance);
+
+      // first, the right CXD amount needs to be minted
+      // 1. only revert if the call is made with the right args
+      const cdxAmount = convertToCdxAmount(apyAmt);
+      const unconvertedBonus = blApyBalance
+        .mul(BONUS_NUMERATOR)
+        .div(BONUS_DENOMINATOR);
+      const bonus = convertToCdxAmount(unconvertedBonus);
+      const cdxAmountWithBonus = cdxAmount.add(bonus);
+      await daoToken.mock.mint
+        .withArgs(user.address, cdxAmountWithBonus)
+        .revertsWithReason("PASS_THE_TEST_1");
+      await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
+        "PASS_THE_TEST_1"
+      );
+      // 2. now that we know the call is made, undo revert
+      await daoToken.mock.mint
+        .withArgs(user.address, cdxAmountWithBonus)
         .returns();
-      // await expect(minter.connect(user).mintLocked()).to.not.be.reverted;
-      await minter.connect(user).mintLocked();
+
+      // lastly, the CXD lock needs to be created;
+      // revert only if the call is made with the right args
+      await daoVotingEscrow.mock.create_lock_for
+        .withArgs(user.address, cdxAmount, lockEnd)
+        .revertsWithReason("PASS_THE_TEST_2");
+      await expect(minter.connect(user).mintLocked()).to.be.revertedWith(
+        "PASS_THE_TEST_2"
+      );
+    });
+  });
+
+  describe("claimApyAndMint", () => {
+    it("Revert when airdrop is inactive", async () => {
+      await govToken.mock.lockEnd.returns(0);
+
+      const claimAmount = tokenAmountToBigNumber("123");
+      const nonce = "0";
+      const { v, r, s } = await generateSignature(
+        DISTRIBUTOR_SIGNER_KEY,
+        APY_REWARD_DISTRIBUTOR_ADDRESS,
+        nonce,
+        user.address,
+        claimAmount
+      );
+      const recipientData = [nonce, user.address, claimAmount];
+
+      await expect(
+        minter.connect(user).claimApyAndMint(recipientData, v, r, s)
+      ).to.be.revertedWith("AIRDROP_INACTIVE");
     });
   });
 });
