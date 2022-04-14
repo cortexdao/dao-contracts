@@ -87,6 +87,7 @@ contract AirdropMinter is ReentrancyGuard {
 
         ITimeLockToken apy = ITimeLockToken(APY_TOKEN_ADDRESS);
         uint256 unlockedApyBalance = apy.unlockedBalance(msg.sender);
+        require(unlockedApyBalance > 0, "NO_UNLOCKED_BALANCE");
 
         apy.lockAmount(msg.sender, unlockedApyBalance);
         uint256 mintAmount = _convertAmount(unlockedApyBalance);
