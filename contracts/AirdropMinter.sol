@@ -41,9 +41,7 @@ contract AirdropMinter is ReentrancyGuard {
         IVotingEscrow blApy = IVotingEscrow(BLAPY_TOKEN_ADDRESS);
         IVotingEscrow.LockedBalance memory locked = blApy.locked(msg.sender);
         // amount is int128 so we do a defensive check
-        if (locked.amount <= 0) {
-            revert("NO_BOOST_LOCKED_AMOUNT");
-        }
+        require(locked.amount > 0, "NO_BOOST_LOCKED_AMOUNT");
         uint256 blApyLockedAmount = uint128(locked.amount);
         uint256 blApyLockEnd = locked.end;
 
