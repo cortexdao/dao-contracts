@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: BUSDL-1.1
 pragma solidity 0.8.9;
 
+import {ReentrancyGuard} from "contracts/common/Imports.sol";
 import {ITimeLockToken} from "contracts/ITimeLockToken.sol";
 import {IVotingEscrow} from "contracts/IVotingEscrow.sol";
 import {IRewardDistributor} from "contracts/IRewardDistributor.sol";
 import {DaoToken} from "contracts/DaoToken.sol";
 
-contract AirdropMinter {
+contract AirdropMinter is ReentrancyGuard {
     address public constant APY_TOKEN_ADDRESS =
         0x95a4492F028aa1fd432Ea71146b433E7B4446611;
     address public constant BLAPY_TOKEN_ADDRESS =
@@ -34,7 +35,7 @@ contract AirdropMinter {
         _BONUS_NUMERATOR = bonusInBps;
     }
 
-    function mintLocked() external returns (uint256) {
+    function mintLocked() external nonReentrant returns (uint256) {
         require(isAirdropActive(), "AIRDROP_INACTIVE");
 
         IVotingEscrow blApy = IVotingEscrow(BLAPY_TOKEN_ADDRESS);
@@ -82,7 +83,7 @@ contract AirdropMinter {
         return mint();
     }
 
-    function mint() public returns (uint256) {
+    function mint() public nonReentrant returns (uint256) {
         require(isAirdropActive(), "AIRDROP_INACTIVE");
 
         ITimeLockToken apy = ITimeLockToken(APY_TOKEN_ADDRESS);
