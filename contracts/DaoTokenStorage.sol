@@ -12,8 +12,6 @@ contract DaoTokenStorage is
     AccessControlEnumerableUpgradeable,
     ERC20Upgradeable
 {
-    /** @notice Account allowed to mint tokens. */
-    address public minter;
     /** @notice The cap on the token's total supply. */
     uint256 public supplyCap;
 }
