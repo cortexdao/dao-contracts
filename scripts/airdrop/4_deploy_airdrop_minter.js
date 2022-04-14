@@ -25,7 +25,7 @@ const { getMaxFee, getMaxPriorityFee } = require("../gas");
 
 const DAO_TOKEN_ADDRESS = "0x00";
 const DAO_VOTING_ESCROW_ADDRESS = "0x00";
-const bonusInBps = 100;
+const bonusInBps = 5000;
 
 // eslint-disable-next-line no-unused-vars
 async function main(argv) {
