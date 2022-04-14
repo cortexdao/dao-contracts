@@ -176,7 +176,7 @@ describe("AirdropMinter - APY Gov Token integration", () => {
   });
 
   describe("Defaults", () => {
-    it("Storage variable are set correctly", async () => {
+    it("Addresses are set correctly", async () => {
       expect(await minter.APY_TOKEN_ADDRESS()).to.equal(govToken.address);
       expect(await minter.BLAPY_TOKEN_ADDRESS()).to.equal(blApy.address);
       expect(await minter.DAO_TOKEN_ADDRESS()).to.equal(daoToken.address);
@@ -238,7 +238,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     });
 
     before("Add minter as DAO token minter", async () => {
-      await daoToken.connect(deployer).setMinter(minter.address);
+      const MINTER_ROLE = await daoToken.MINTER_ROLE();
+      await daoToken.connect(deployer).grantRole(MINTER_ROLE, minter.address);
     });
 
     before("Prepare user APY balance", async () => {
@@ -326,7 +327,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     });
 
     before("Add minter as DAO token minter", async () => {
-      await daoToken.connect(deployer).setMinter(minter.address);
+      const MINTER_ROLE = await daoToken.MINTER_ROLE();
+      await daoToken.connect(deployer).grantRole(MINTER_ROLE, minter.address);
     });
 
     before("Setup user delegation to daoToken", async () => {
@@ -487,7 +489,8 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     });
 
     before("Add minter as DAO token minter", async () => {
-      await daoToken.connect(deployer).setMinter(minter.address);
+      const MINTER_ROLE = await daoToken.MINTER_ROLE();
+      await daoToken.connect(deployer).grantRole(MINTER_ROLE, minter.address);
     });
 
     before("Prepare user APY balance", async () => {

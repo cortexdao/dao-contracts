@@ -3,7 +3,6 @@ const hre = require("hardhat");
 const { ethers } = hre;
 const timeMachine = require("ganache-time-traveler");
 const { ZERO_ADDRESS, tokenAmountToBigNumber } = require("./utils");
-const { deployMockContract } = require("@ethereum-waffle/mock-contract");
 
 describe("DaoToken deployment", () => {
   // contract factories
@@ -103,8 +102,21 @@ describe("DaoToken unit tests", () => {
       expect(await daoToken.decimals()).to.equal(18);
     });
 
-    it("Deployer is owner", async () => {
-      expect(await daoToken.owner()).to.equal(deployer.address);
+    it("Deployer has default admin role", async () => {
+      const DEFAULT_ADMIN_ROLE = await daoToken.DEFAULT_ADMIN_ROLE();
+      expect(await daoToken.hasRole(DEFAULT_ADMIN_ROLE, deployer.address)).to.be
+        .true;
+    });
+
+    it("Deployer has minter role", async () => {
+      const MINTER_ROLE = await daoToken.MINTER_ROLE();
+      expect(await daoToken.hasRole(MINTER_ROLE, deployer.address)).to.be.true;
+    });
+
+    it("Deployer has protocol role", async () => {
+      const PROTOCOL_ROLE = await daoToken.PROTOCOL_ROLE();
+      expect(await daoToken.hasRole(PROTOCOL_ROLE, deployer.address)).to.be
+        .true;
     });
 
     it("Initial supply cap is 271,828,182", async () => {
@@ -113,30 +125,10 @@ describe("DaoToken unit tests", () => {
     });
   });
 
-  describe("setMinter", () => {
-    it("Permissioned can set minter", async () => {
-      const contract = await deployMockContract(deployer, []);
-      await expect(daoToken.connect(deployer).setMinter(contract.address)).to
-        .not.be.reverted;
-    });
-
-    it("Unpermissioned cannot set minter", async () => {
-      const contract = await deployMockContract(deployer, []);
-      await expect(
-        daoToken.connect(randomUser).setMinter(contract.address)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("Cannot set to zero address", async () => {
-      await expect(
-        daoToken.connect(deployer).setMinter(ZERO_ADDRESS)
-      ).to.be.revertedWith("INVALID_ADDRESS");
-    });
-  });
-
   describe("mint", () => {
-    before("Set minter", async () => {
-      await daoToken.connect(deployer).setMinter(minter.address);
+    before("Grant minter role", async () => {
+      const MINTER_ROLE = await daoToken.MINTER_ROLE();
+      await daoToken.connect(deployer).grantRole(MINTER_ROLE, minter.address);
     });
 
     it("Permissioned can mint", async () => {
@@ -144,10 +136,15 @@ describe("DaoToken unit tests", () => {
         .be.reverted;
     });
 
+    it("Deployer can mint", async () => {
+      await expect(daoToken.connect(deployer).mint(randomUser.address, 1)).to
+        .not.be.reverted;
+    });
+
     it("Unpermissioned cannot mint", async () => {
       await expect(
         daoToken.connect(randomUser).mint(randomUser.address, 1)
-      ).to.be.revertedWith("MINTER_ONLY");
+      ).to.be.revertedWith("MINTER_ROLE_ONLY");
     });
 
     it("Cannot mint beyond supply cap", async () => {
@@ -167,7 +164,7 @@ describe("DaoToken unit tests", () => {
   });
 
   describe("setSupplyCap", () => {
-    it("Permissioned can set", async () => {
+    it("Deployer can set", async () => {
       await expect(
         daoToken.connect(deployer).setSupplyCap(tokenAmountToBigNumber("100"))
       ).to.not.be.reverted;
@@ -176,7 +173,7 @@ describe("DaoToken unit tests", () => {
     it("Unpermissioned cannot set", async () => {
       await expect(
         daoToken.connect(randomUser).setSupplyCap(tokenAmountToBigNumber("100"))
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PROTOCOL_ROLE_ONLY");
     });
 
     it("Cannot set zero cap", async () => {
@@ -187,7 +184,8 @@ describe("DaoToken unit tests", () => {
 
     it("Cannot set cap lower than total supply", async () => {
       // ensure we have some supply
-      await daoToken.connect(deployer).setMinter(minter.address);
+      const MINTER_ROLE = await daoToken.MINTER_ROLE();
+      await daoToken.connect(deployer).grantRole(MINTER_ROLE, minter.address);
       await daoToken
         .connect(minter)
         .mint(randomUser.address, tokenAmountToBigNumber("100"));
