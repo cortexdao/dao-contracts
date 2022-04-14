@@ -62,4 +62,6 @@ jobs:
       run: yarn dot-only
     - name: Slither static analysis
       uses: crytic/slither-action@v0.1.1
+      with:
+        node-version: ${{ matrix.node-version }}
 
