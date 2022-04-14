@@ -61,11 +61,11 @@ contract AirdropMinter is ReentrancyGuard {
         DaoToken(DAO_TOKEN_ADDRESS).mint(msg.sender, mintAmount);
         // only lock up the non-bonus in the voting escrow, so
         // the user keeps the bonus unlocked.
-        IVotingEscrow(VE_TOKEN_ADDRESS).create_lock_for(
-            msg.sender,
-            cxdLockedAmount,
-            blApyLockEnd
-        );
+        IVotingEscrow veToken = IVotingEscrow(VE_TOKEN_ADDRESS);
+        IVotingEscrow.LockedBalance memory newLocked =
+            veToken.locked(msg.sender);
+        require(newLocked.amount == 0, "LOCK_ALREADY_EXISTS");
+        veToken.create_lock_for(msg.sender, cxdLockedAmount, blApyLockEnd);
 
         return mintAmount;
     }
