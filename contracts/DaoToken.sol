@@ -31,8 +31,10 @@ contract DaoToken is DaoTokenStorage {
      * @dev Can only be used by an account with minter role.  This should include
      * the smart contract that disburses the liquidity mining rewards.
      */
-    function mint(address account, uint256 amount) external {
-        require(hasRole(MINTER_ROLE, msg.sender), "MINTER_ROLE_ONLY");
+    function mint(address account, uint256 amount)
+        external
+        onlyRole(MINTER_ROLE)
+    {
         _mint(account, amount);
     }
 
@@ -40,8 +42,7 @@ contract DaoToken is DaoTokenStorage {
      * @notice Set the new supply cap as determined by governance.
      * @dev New cap cannot be less than existing supply.
      */
-    function setSupplyCap(uint256 newCap) external {
-        require(hasRole(PROTOCOL_ROLE, msg.sender), "PROTOCOL_ROLE_ONLY");
+    function setSupplyCap(uint256 newCap) external onlyRole(PROTOCOL_ROLE) {
         _setSupplyCap(newCap);
     }
 

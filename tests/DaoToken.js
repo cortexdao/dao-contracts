@@ -142,9 +142,11 @@ describe("DaoToken unit tests", () => {
     });
 
     it("Unpermissioned cannot mint", async () => {
+      const MINTER_ROLE = await daoToken.MINTER_ROLE();
+      const revertReason = `AccessControl: account ${randomUser.address.toLowerCase()} is missing role ${MINTER_ROLE}`;
       await expect(
         daoToken.connect(randomUser).mint(randomUser.address, 1)
-      ).to.be.revertedWith("MINTER_ROLE_ONLY");
+      ).to.be.revertedWith(revertReason);
     });
 
     it("Cannot mint beyond supply cap", async () => {
@@ -171,9 +173,11 @@ describe("DaoToken unit tests", () => {
     });
 
     it("Unpermissioned cannot set", async () => {
+      const PROTOCOL_ROLE = await daoToken.PROTOCOL_ROLE();
+      const revertReason = `AccessControl: account ${randomUser.address.toLowerCase()} is missing role ${PROTOCOL_ROLE}`;
       await expect(
         daoToken.connect(randomUser).setSupplyCap(tokenAmountToBigNumber("100"))
-      ).to.be.revertedWith("PROTOCOL_ROLE_ONLY");
+      ).to.be.revertedWith(revertReason);
     });
 
     it("Cannot set zero cap", async () => {
