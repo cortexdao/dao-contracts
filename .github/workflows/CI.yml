@@ -60,3 +60,9 @@ jobs:
         ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
     - name: Check for dot-only
       run: yarn dot-only
+
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: crytic/slither-action@v0.1.1
