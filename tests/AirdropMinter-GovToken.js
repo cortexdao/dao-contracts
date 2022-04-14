@@ -157,30 +157,6 @@ describe("AirdropMinter - APY Gov Token integration", () => {
     );
   });
 
-  describe("Constructor", () => {
-    it("Contract fails to deploy when passed invalid DAO address", async () => {
-      const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
-      await expect(
-        AirdropMinter.deploy(
-          ethers.constants.AddressZero,
-          daoVotingEscrow.address,
-          100
-        )
-      ).to.be.revertedWith("INVALID_DAO_ADDRESS");
-    });
-
-    it("Contract fails to deploy when passed invalid Escrow address", async () => {
-      const AirdropMinter = await ethers.getContractFactory("AirdropMinter");
-      await expect(
-        AirdropMinter.deploy(
-          daoToken.address,
-          ethers.constants.AddressZero,
-          100
-        )
-      ).to.be.revertedWith("INVALID_ESCROW_ADDRESS");
-    });
-  });
-
   describe("Defaults", () => {
     it("Storage variable are set correctly", async () => {
       expect(await minter.APY_TOKEN_ADDRESS()).to.equal(govToken.address);
