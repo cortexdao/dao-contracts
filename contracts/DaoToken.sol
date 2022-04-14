@@ -1,21 +1,9 @@
 // SPDX-License-Identifier: BUSDL-1.1
 pragma solidity 0.8.9;
 
-import {IDetailedERC20} from "contracts/common/Imports.sol";
-import {SafeERC20} from "contracts/libraries/Imports.sol";
-import {
-    Initializable,
-    ERC20Upgradeable,
-    OwnableUpgradeable,
-    AddressUpgradeable
-} from "contracts/proxy/Imports.sol";
+import {DaoTokenStorage} from "contracts/DaoTokenStorage.sol";
 
-contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
-    /** @notice Account allowed to mint tokens. */
-    address public minter;
-    /** @notice The cap on the token's total supply. */
-    uint256 public supplyCap;
-
+contract DaoToken is DaoTokenStorage {
     event NewMinter(address newMinter);
     event NewSupplyCap(uint256 newCap);
 
@@ -63,10 +51,10 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
 
     function _mint(address account, uint256 amount) internal virtual override {
         require(
-            ERC20Upgradeable.totalSupply() + amount <= supplyCap,
+            super.totalSupply() + amount <= supplyCap,
             "SUPPLY_CAP_EXCEEDED"
         );
-        ERC20Upgradeable._mint(account, amount);
+        super._mint(account, amount);
     }
 
     function _setMinter(address newMinter) internal {
@@ -77,7 +65,7 @@ contract DaoToken is Initializable, OwnableUpgradeable, ERC20Upgradeable {
 
     function _setSupplyCap(uint256 newCap) internal {
         require(newCap > 0, "ZERO_SUPPLY_CAP");
-        require(newCap > ERC20Upgradeable.totalSupply(), "INVALID_SUPPLY_CAP");
+        require(newCap > super.totalSupply(), "INVALID_SUPPLY_CAP");
         supplyCap = newCap;
         emit NewSupplyCap(newCap);
     }
