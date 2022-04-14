@@ -3,6 +3,9 @@ pragma solidity 0.8.9;
 
 import {Initializable} from "./Initializable.sol";
 import {
+    AccessControlEnumerableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
+import {
     AddressUpgradeable
 } from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import {

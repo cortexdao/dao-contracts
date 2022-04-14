@@ -2,14 +2,14 @@
 pragma solidity 0.8.9;
 
 import {
-    Initializable,
+    AccessControlEnumerableUpgradeable,
     ERC20Upgradeable,
-    OwnableUpgradeable
+    Initializable
 } from "contracts/proxy/Imports.sol";
 
 contract DaoTokenStorage is
     Initializable,
-    OwnableUpgradeable,
+    AccessControlEnumerableUpgradeable,
     ERC20Upgradeable
 {
     /** @notice Account allowed to mint tokens. */
