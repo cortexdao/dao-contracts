@@ -305,6 +305,7 @@ describe("AirdropMinter unit tests", () => {
       await blApy.mock.locked.returns([apyAmt, lockEnd]);
       const blApyBalance = tokenAmountToBigNumber("2187");
       await blApy.mock.balanceOf.withArgs(user.address).returns(blApyBalance);
+      await daoVotingEscrow.mock.locked.returns(0, 0);
 
       // first, the right CXD amount needs to be minted
       // 1. only revert if the call is made with the right args
@@ -327,7 +328,6 @@ describe("AirdropMinter unit tests", () => {
 
       // lastly, the CXD lock needs to be created;
       // revert only if the call is made with the right args
-      await daoVotingEscrow.mock.locked.returns(0, 0);
       await daoVotingEscrow.mock.create_lock_for
         .withArgs(user.address, cdxAmount, lockEnd)
         .revertsWithReason("PASS_THE_TEST_2");

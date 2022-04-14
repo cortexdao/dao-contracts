@@ -259,9 +259,9 @@ describe("AirdropMinter - APY Gov Token integration", () => {
 
     it("Can't mint more with same APY tokens", async () => {
       await minter.connect(user).mint();
-      await minter.connect(user).mint();
-      const mintAmount = convertToCxdAmount(userBalance);
-      expect(await daoToken.balanceOf(user.address)).to.equal(mintAmount);
+      await expect(minter.connect(user).mint()).to.be.revertedWith(
+        "NO_UNLOCKED_BALANCE"
+      );
     });
 
     it("Can mint more after accumulating more APY", async () => {
