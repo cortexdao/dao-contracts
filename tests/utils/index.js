@@ -14,6 +14,7 @@ const {
   getProxyAdmin,
   getLogicContract,
 } = require("./proxy");
+const { setBlockTime } = require("./time");
 
 console.debug = function () {
   if (!console.debugging) return;
@@ -46,4 +47,5 @@ module.exports = {
   getEip1967Addresses,
   getProxyAdmin,
   getLogicContract,
+  setBlockTime,
 };

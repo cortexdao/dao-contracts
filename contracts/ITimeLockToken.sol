@@ -3,7 +3,7 @@ pragma solidity 0.8.9;
 
 import {IDetailedERC20} from "contracts/common/Imports.sol";
 
-interface IApyGovernanceToken is IDetailedERC20 {
+interface ITimeLockToken is IDetailedERC20 {
     function lockAmount(address account, uint256 amount) external;
 
     function setLockEnd(uint256 lockEnd) external;
@@ -15,4 +15,6 @@ interface IApyGovernanceToken is IDetailedERC20 {
     function lockEnd() external view returns (uint256);
 
     function unlockedBalance(address account) external view returns (uint256);
+
+    function owner() external view returns (address);
 }
