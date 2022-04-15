@@ -120,7 +120,7 @@ smart_wallet_checker: public(address)
 admin: public(address)  # Can and will be a smart contract
 future_admin: public(address)
 
-# Functionality added by APY.Finance:
+# Functionality added to original Curve contract:
 
 # 1) allow complete shutdown of this contract while
 # allowing users to withdraw their locked deposits
@@ -163,7 +163,7 @@ def shutdown():
     """
     @notice Disable deposits but allow withdrawals regardless of lock
 
-    Extension by APY.Finance
+    Extension to original VotingEscrow
     """
     assert msg.sender == self.admin, "Admin only"  # dev: admin only
     self.is_shutdown = True
@@ -232,7 +232,7 @@ def assign_delegate(addr: address):
     @notice Assign `addr` the power to create locks for `msg.sender`
     @param addr Address of lock delegate
 
-    Extension by APY.Finance
+    Extension to original VotingEscrow
     """
     self.delegate_for[msg.sender] = addr
     log Delegate(msg.sender, addr)
@@ -482,7 +482,7 @@ def create_lock_for(_addr: address, _value: uint256, _unlock_time: uint256):
     @param _value Amount to deposit
     @param _unlock_time Epoch time when tokens unlock, rounded down to whole weeks
 
-    Extension by APY.Finance
+    Extension to original VotingEscrow
     """
     unlock_time: uint256 = (_unlock_time / WEEK) * WEEK  # Locktime is rounded down to weeks
     _locked: LockedBalance = self.locked[_addr]
