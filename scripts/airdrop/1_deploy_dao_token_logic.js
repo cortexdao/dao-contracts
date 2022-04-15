@@ -22,9 +22,12 @@ const { argv } = require("yargs")
 const hre = require("hardhat");
 const { ethers, network } = require("hardhat");
 const { getMaxFee, getMaxPriorityFee } = require("../gas");
-const { getSafeSigner, waitForSafeTxDetails } = require("../safe");
+const { getJson, saveJson } = require("../json");
+const { getSafeSigner, waitForSafeTxReceipt } = require("../safe");
 
-const PROTOCOL_SAFE_ADDRESS = "0x00";
+const ADDRESSES_PATH = "./airdrop/addresses.json";
+
+const PROTOCOL_SAFE_ADDRESS = "0x2A208EC9144e6380016aD51a529B354aE1dD5D7d";
 
 // eslint-disable-next-line no-unused-vars
 async function main(argv) {
@@ -64,21 +67,25 @@ async function main(argv) {
   console.log("");
 
   const safeSigner = await getSafeSigner(
+    networkName,
     PROTOCOL_SAFE_ADDRESS,
-    safeOwner,
-    networkName
+    safeOwner
   );
 
   const contractFactory = await ethers.getContractFactory(contractName);
   const contract = await contractFactory
     .connect(safeSigner)
     .deploy({ maxFeePerGas, maxPriorityFeePerGas });
-  const receipt = await waitForSafeTxDetails(
+  const receipt = await waitForSafeTxReceipt(
     contract.deployTransaction,
     safeSigner.service
   );
   console.log("Contract address: %s", receipt.contractAddress);
   console.log("");
+
+  const obj = getJson(ADDRESSES_PATH);
+  obj["DAO_TOKEN_LOGIC"] = receipt.contractAddress;
+  saveJson(ADDRESSES_PATH, obj);
 
   maxFeePerGas = await getMaxFee(argv.maxFeePerGas);
   maxPriorityFeePerGas = await getMaxPriorityFee(argv.maxPriorityFeePerGas);
