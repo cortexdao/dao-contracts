@@ -22,11 +22,13 @@ const { argv } = require("yargs")
 const hre = require("hardhat");
 const { ethers, network } = require("hardhat");
 const { getMaxFee, getMaxPriorityFee } = require("../gas");
-const { getSafeSigner, waitForSafeTxDetails } = require("../safe");
+const { getJson, saveJson } = require("../json");
+const { getSafeSigner, waitForSafeTxReceipt } = require("../safe");
 
-const PROTOCOL_SAFE_ADDRESS = "0x00";
-const DAO_TOKEN_LOGIC_ADDRESS = "0x00";
-const PROXY_ADMIN_ADDRESS = "0x00";
+const ADDRESSES_PATH = "./airdrop/addresses.json";
+
+const PROTOCOL_SAFE_ADDRESS = "0x2A208EC9144e6380016aD51a529B354aE1dD5D7d";
+const PROXY_ADMIN_ADDRESS = "0x7965283631253DfCb71Db63a60C656DEDF76234f";
 
 // eslint-disable-next-line no-unused-vars
 async function main(argv) {
@@ -67,10 +69,14 @@ async function main(argv) {
   console.log("");
 
   const safeSigner = await getSafeSigner(
+    networkName,
     PROTOCOL_SAFE_ADDRESS,
-    safeOwner,
-    networkName
+    safeOwner
   );
+
+  const obj = getJson(ADDRESSES_PATH);
+  const DAO_TOKEN_LOGIC_ADDRESS = obj["DAO_TOKEN_LOGIC"];
+  console.log("Logic contract: %s", DAO_TOKEN_LOGIC_ADDRESS);
 
   const contractFactory = await ethers.getContractFactory(contractName);
   const DaoToken = await ethers.getContractFactory("DaoToken");
@@ -81,12 +87,15 @@ async function main(argv) {
       maxFeePerGas,
       maxPriorityFeePerGas,
     });
-  const receipt = await waitForSafeTxDetails(
+  const receipt = await waitForSafeTxReceipt(
     contract.deployTransaction,
     safeSigner.service
   );
   console.log("Contract address: %s", receipt.contractAddress);
   console.log("");
+
+  obj["DAO_TOKEN_PROXY"] = receipt.contractAddress;
+  saveJson(ADDRESSES_PATH, obj);
 
   console.log("Verifying on Etherscan ...");
   await hre.run("verify:verify", {
