@@ -22,10 +22,12 @@ const { argv } = require("yargs")
 const hre = require("hardhat");
 const { ethers, network } = require("hardhat");
 const { getMaxFee, getMaxPriorityFee } = require("../gas");
-const { getSafeSigner, waitForSafeTxDetails } = require("../safe");
+const { getJson, saveJson } = require("../json");
+const { getSafeSigner, waitForSafeTxReceipt } = require("../safe");
 
-const PROTOCOL_SAFE_ADDRESS = "0x00";
-const DAO_TOKEN_ADDRESS = "0x00";
+const ADDRESSES_PATH = "./airdrop/addresses.json";
+
+const PROTOCOL_SAFE_ADDRESS = "0x2A208EC9144e6380016aD51a529B354aE1dD5D7d";
 
 // eslint-disable-next-line no-unused-vars
 async function main(argv) {
@@ -62,25 +64,33 @@ async function main(argv) {
   console.log("");
 
   const safeSigner = await getSafeSigner(
+    networkName,
     PROTOCOL_SAFE_ADDRESS,
-    safeOwner,
-    networkName
+    safeOwner
   );
 
+  const obj = getJson(ADDRESSES_PATH);
+  const DAO_TOKEN_ADDRESS = obj["DAO_TOKEN_PROXY"];
+  console.log("DAO Token: %s", DAO_TOKEN_ADDRESS);
+  console.log("");
+
   const contractFactory = await ethers.getContractFactory(contractName);
-  const contract = await contractFactory.connect(safeOwner).deploy(
+  const contract = await contractFactory.connect(safeSigner).deploy(
     DAO_TOKEN_ADDRESS, // token
-    "Vote-Locked CXD", // name
+    "Vote Locked CXD", // name
     "vlCXD", // symbol
     "1.0.0", // version
     { maxFeePerGas, maxPriorityFeePerGas }
   );
-  const receipt = await waitForSafeTxDetails(
+  const receipt = await waitForSafeTxReceipt(
     contract.deployTransaction,
     safeSigner.service
   );
   console.log("Contract address: %s", receipt.contractAddress);
   console.log("");
+
+  obj["VOTING_ESCROW"] = receipt.contractAddress;
+  saveJson(ADDRESSES_PATH, obj);
 
   console.log("Verify manually on the etherscan website.");
   // can't verify vyper contracts through hardhat; must do through
@@ -88,7 +98,7 @@ async function main(argv) {
   // (replace FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF with dao token address)
   //
   // vyper version 0.2.4
-  // 000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000f566f74652d4c6f636b65642043584400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005766c4358440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005312e302e30000000000000000000000000000000000000000000000000000000
+  // 0000000000000000000000005A56Da75c50aA2733F5Fa9A2442AaEfcBc60B2e6000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000f566f7465204c6f636b65642043584400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005766c4358440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005312e302e30000000000000000000000000000000000000000000000000000000
 }
 
 if (!module.parent) {
