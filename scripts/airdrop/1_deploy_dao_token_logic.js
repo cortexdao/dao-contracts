@@ -22,6 +22,9 @@ const { argv } = require("yargs")
 const hre = require("hardhat");
 const { ethers, network } = require("hardhat");
 const { getMaxFee, getMaxPriorityFee } = require("../gas");
+const { getSafeSigner, waitForSafeTxDetails } = require("../safe");
+
+const PROTOCOL_SAFE_ADDRESS = "0x00";
 
 // eslint-disable-next-line no-unused-vars
 async function main(argv) {
@@ -37,10 +40,11 @@ async function main(argv) {
     process.env.SAFE_OWNER_KEY,
     ethers.provider
   );
-  console.log("Deployer: %s", safeOwner.address);
+  console.log("Safe Owner: %s", safeOwner.address);
   const balance =
     (await ethers.provider.getBalance(safeOwner.address)).toString() / 1e18;
-  console.log("ETH balance (Safe owner): %s", balance);
+  console.log("ETH balance: %s", balance);
+  console.log("");
 
   const contractName = "DaoToken";
   console.log(`${contractName} deploy`);
@@ -59,13 +63,22 @@ async function main(argv) {
   console.log("Deploying ... ");
   console.log("");
 
+  const safeSigner = await getSafeSigner(
+    PROTOCOL_SAFE_ADDRESS,
+    safeOwner,
+    networkName
+  );
+
   const contractFactory = await ethers.getContractFactory(contractName);
   const contract = await contractFactory
-    .connect(safeOwner)
+    .connect(safeSigner)
     .deploy({ maxFeePerGas, maxPriorityFeePerGas });
-  await contract.deployTransaction.wait(5);
-
-  console.log("Contract address: %s", contract.address);
+  const receipt = await waitForSafeTxDetails(
+    contract.deployTransaction,
+    safeSigner.service
+  );
+  console.log("Contract address: %s", receipt.contractAddress);
+  console.log("");
 
   maxFeePerGas = await getMaxFee(argv.maxFeePerGas);
   maxPriorityFeePerGas = await getMaxPriorityFee(argv.maxPriorityFeePerGas);
@@ -73,7 +86,7 @@ async function main(argv) {
   console.log("Initializing ... ");
   console.log("");
   const tx = await contract
-    .connect(safeOwner)
+    .connect(safeSigner)
     .initialize({ maxFeePerGas, maxPriorityFeePerGas });
   await tx.wait(2);
 

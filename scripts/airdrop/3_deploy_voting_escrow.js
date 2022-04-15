@@ -22,7 +22,9 @@ const { argv } = require("yargs")
 const hre = require("hardhat");
 const { ethers, network } = require("hardhat");
 const { getMaxFee, getMaxPriorityFee } = require("../gas");
+const { getSafeSigner, waitForSafeTxDetails } = require("../safe");
 
+const PROTOCOL_SAFE_ADDRESS = "0x00";
 const DAO_TOKEN_ADDRESS = "0x00";
 
 // eslint-disable-next-line no-unused-vars
@@ -59,6 +61,12 @@ async function main(argv) {
   console.log("Deploying ... ");
   console.log("");
 
+  const safeSigner = await getSafeSigner(
+    PROTOCOL_SAFE_ADDRESS,
+    safeOwner,
+    networkName
+  );
+
   const contractFactory = await ethers.getContractFactory(contractName);
   const contract = await contractFactory.connect(safeOwner).deploy(
     DAO_TOKEN_ADDRESS, // token
@@ -67,9 +75,12 @@ async function main(argv) {
     "1.0.0", // version
     { maxFeePerGas, maxPriorityFeePerGas }
   );
-  await contract.deployTransaction.wait(5);
-
-  console.log("Contract address: %s", contract.address);
+  const receipt = await waitForSafeTxDetails(
+    contract.deployTransaction,
+    safeSigner.service
+  );
+  console.log("Contract address: %s", receipt.contractAddress);
+  console.log("");
 
   console.log("Verify manually on the etherscan website.");
   // can't verify vyper contracts through hardhat; must do through

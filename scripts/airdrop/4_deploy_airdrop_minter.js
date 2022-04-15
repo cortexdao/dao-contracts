@@ -22,7 +22,9 @@ const { argv } = require("yargs")
 const hre = require("hardhat");
 const { ethers, network } = require("hardhat");
 const { getMaxFee, getMaxPriorityFee } = require("../gas");
+const { getSafeSigner, waitForSafeTxDetails } = require("../safe");
 
+const PROTOCOL_SAFE_ADDRESS = "0x00";
 const DAO_TOKEN_ADDRESS = "0x00";
 const DAO_VOTING_ESCROW_ADDRESS = "0x00";
 const bonusInBps = 5000;
@@ -65,16 +67,25 @@ async function main(argv) {
   console.log("Deploying ... ");
   console.log("");
 
+  const safeSigner = await getSafeSigner(
+    PROTOCOL_SAFE_ADDRESS,
+    safeOwner,
+    networkName
+  );
+
   const contractFactory = await ethers.getContractFactory(contractName);
   const contract = await contractFactory
-    .connect(safeOwner)
+    .connect(safeSigner)
     .deploy(DAO_TOKEN_ADDRESS, DAO_VOTING_ESCROW_ADDRESS, bonusInBps, {
       maxFeePerGas,
       maxPriorityFeePerGas,
     });
-  await contract.deployTransaction.wait(5);
-
-  console.log("Contract address: %s", contract.address);
+  const receipt = await waitForSafeTxDetails(
+    contract.deployTransaction,
+    safeSigner.service
+  );
+  console.log("Contract address: %s", receipt.contractAddress);
+  console.log("");
 
   console.log("Verifying on Etherscan ...");
   await hre.run("verify:verify", {
