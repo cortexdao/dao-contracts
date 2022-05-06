@@ -164,41 +164,4 @@ describe("DaoToken unit tests", () => {
       ).to.be.revertedWith("SUPPLY_CAP_EXCEEDED");
     });
   });
-
-  describe("setSupplyCap", () => {
-    it("Deployer can set", async () => {
-      await expect(
-        daoToken.connect(deployer).setSupplyCap(tokenAmountToBigNumber("100"))
-      ).to.not.be.reverted;
-    });
-
-    it("Unpermissioned cannot set", async () => {
-      const PROTOCOL_ROLE = await daoToken.PROTOCOL_ROLE();
-      const revertReason = `AccessControl: account ${randomUser.address.toLowerCase()} is missing role ${PROTOCOL_ROLE}`;
-      await expect(
-        daoToken.connect(randomUser).setSupplyCap(tokenAmountToBigNumber("100"))
-      ).to.be.revertedWith(revertReason);
-    });
-
-    it("Cannot set zero cap", async () => {
-      await expect(daoToken.setSupplyCap(0)).to.be.revertedWith(
-        "ZERO_SUPPLY_CAP"
-      );
-    });
-
-    it("Cannot set cap lower than total supply", async () => {
-      // ensure we have some supply
-      const MINTER_ROLE = await daoToken.MINTER_ROLE();
-      await daoToken.connect(deployer).grantRole(MINTER_ROLE, minter.address);
-      await daoToken
-        .connect(minter)
-        .mint(randomUser.address, tokenAmountToBigNumber("100"));
-
-      const totalSupply = await daoToken.totalSupply();
-      const newSupply = totalSupply.sub(1);
-      await expect(daoToken.setSupplyCap(newSupply)).to.be.revertedWith(
-        "INVALID_SUPPLY_CAP"
-      );
-    });
-  });
 });

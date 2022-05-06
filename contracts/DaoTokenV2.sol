@@ -3,7 +3,7 @@ pragma solidity 0.8.9;
 
 import {DaoTokenStorage} from "contracts/DaoTokenStorage.sol";
 
-contract DaoToken is DaoTokenStorage {
+contract DaoTokenV2 is DaoTokenStorage {
     bytes32 public constant PROTOCOL_ROLE = keccak256("PROTOCOL_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
@@ -23,9 +23,6 @@ contract DaoToken is DaoTokenStorage {
         _setSupplyCap(271828182e18);
     }
 
-    // solhint-disable-next-line no-empty-blocks
-    function initializeV2() external virtual onlyProxyAdmin {}
-
     /**
      * @notice Mint tokens to specified account.  Cannot exceed the supply cap.
      * @dev Can only be used by an account with minter role.  This should include
@@ -36,14 +33,6 @@ contract DaoToken is DaoTokenStorage {
         onlyRole(MINTER_ROLE)
     {
         _mint(account, amount);
-    }
-
-    /**
-     * @notice Set the new supply cap as determined by governance.
-     * @dev New cap cannot be less than existing supply.
-     */
-    function setSupplyCap(uint256 newCap) external onlyRole(PROTOCOL_ROLE) {
-        _setSupplyCap(newCap);
     }
 
     function _mint(address account, uint256 amount) internal virtual override {

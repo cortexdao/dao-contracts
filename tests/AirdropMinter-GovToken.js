@@ -544,12 +544,6 @@ describe("AirdropMinter - APY Gov Token integration", () => {
       );
     });
 
-    it("Verify that the minter detects when Airdrop has ended", async () => {
-      const lockEnd = await govToken.lockEnd();
-      await setBlockTime(lockEnd);
-      expect(await minter.connect(user).isAirdropActive(), true);
-    });
-
     it("Unsuccessfully claim APY and mint DAO tokens when airdrop has ended", async () => {
       const claimAmount = tokenAmountToBigNumber("123");
       const nonce = "0";
